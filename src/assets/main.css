@@ -1,0 +1,31 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+a{
+  text-decoration: none;
+  color: inherit;
+}
+button{
+  background-color: inherit;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  background-color:rgb(210, 210, 235);
+}
+
+.btn-primary{
+  background-color:rgb(91, 91, 122);
+  color: white;
+}
+
+nav{
+  display: flex;
+  gap: 10px;
+  
+}
