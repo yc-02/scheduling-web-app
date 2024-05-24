@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref,computed } from 'vue'
+import { ref,computed} from 'vue'
 
 const today = new Date()
 const todayDate = today.getDate()
@@ -115,10 +115,10 @@ function nextMonthDatesStype(index:number){
 }
 
 
+
 </script>
 
 <template>
-  <main>
     <div class="titleContainer">
         <p>{{ renderMonth(month) }} {{ year }}</p>
       <button @click="prevMonth">Last Month</button>
@@ -131,11 +131,6 @@ function nextMonthDatesStype(index:number){
       <div class="calendarLeft">
         <p>Today</p>
         <slot name="todayTasks"></slot>
-        <!-- <div v-for="task,index in tasks" :key="index">
-          <ul v-if="new Date(task.taskDate).toDateString() === today.toDateString()">
-            <li>{{ task.taskName }} {{ task.startTime }} -  {{ task.endTime }}</li>
-          </ul>
-        </div> -->
       </div>
       <div class="calendar">
         <p v-for="day in daysInWeek" :key="day" class="days">
@@ -150,7 +145,6 @@ function nextMonthDatesStype(index:number){
         </div>
       </div>
     </div>
-  </main>
 </template>
 <style scoped>
 main{

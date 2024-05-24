@@ -5,7 +5,6 @@ export type Lists = {
     endDate:string;
     important:boolean;
     id:string;
-    tasks:Tasks[]
 }
 export type Tasks = {
     taskName:string;

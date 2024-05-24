@@ -29,3 +29,20 @@ nav{
   gap: 10px;
   
 }
+input{
+  border: none;
+  padding:15px;
+  border-radius: 5px;
+  width: 300px;
+}
+label{
+  width: 300px;
+}
+form{
+  display: inline-flex;
+  flex-direction: column;
+  background-color: rgb(202, 202, 227);
+  padding: 20px;
+  border-radius: 5px;
+  gap: 10px;
+}

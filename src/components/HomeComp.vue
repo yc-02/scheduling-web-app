@@ -2,29 +2,45 @@
 import { isAfter, isBefore, isEqual } from "date-fns";
 import CalendarByMonth from './CalendarByMonth.vue';
 import router from '@/router';
-import { onMounted, ref, watch, type Ref } from "vue";
-import type { Tasks } from "env";
-import { useProjects } from "@/stores/projects";
-const lists = useProjects()
+import { ref } from "vue";
+import { getDocs, type DocumentData } from "firebase/firestore";
+import { listsRef, taskRef } from "@/firebase";
+import { useCollection } from "vuefire";
+const lists = useCollection(listsRef)
+const tasks = ref()
+const isLoading=ref(true)
 
+function fetchTasks(){
+    getDocs(taskRef).then(querySnapshot=>{
+        tasks.value = querySnapshot.docs.map(doc=>{
+            return doc.data()
+        })
+    }).then(()=>{
+        isLoading.value=false
+    }).catch(error=>{
+        console.log(error)
+    })
+}
+fetchTasks()
 
 const handleClick = () =>{
     router.push('/projects')
 }
-const tasks:Ref<Tasks[]> = ref([])
-onMounted(()=>{
-    watch(lists.data,()=>{
-      lists.value.forEach(list=>{
-      tasks.value = list.tasks})
-    })
-})
+
+const showTodayTasks=(task:DocumentData)=>{
+    return new Date().toLocaleDateString()===new Date(task.taskDate).toLocaleDateString()
+}
+const showProjects=(slotProps:{dates:Date},list:DocumentData)=>{
+    return isBefore(slotProps.dates,new Date(list.endDate)) && isAfter(slotProps.dates,new Date(list.startDate)) || isEqual(slotProps.dates,new Date(list.endDate)) || isEqual(slotProps.dates,new Date(list.startDate))
+}
 
 const checked = ref()
-console.log(checked.value)
+
+
 
 </script>
 <template>
-    <div>
+    <div v-show="!isLoading">
         <button @click="handleClick">Create New Project</button>
         <button>Add Daily Tasks</button>
         <div>
@@ -32,19 +48,15 @@ console.log(checked.value)
             <template #list="slotProps">
                 <div v-for="list in lists" :key="list.id">
                     <RouterLink :to="{name:'project',params:{id:list.id}}">
-                        <div
-                        class="projects" 
-                        v-if="isBefore(slotProps.dates,new Date(list.endDate)) && isAfter(slotProps.dates,new Date(list.startDate)) 
-                        || isEqual(slotProps.dates,new Date(list.endDate)) || isEqual(slotProps.dates,new Date(list.startDate))"
-                        >
+                        <div class="projects" v-if="showProjects(slotProps,list)">
                         {{list.listName}}
-                    </div>
+                        </div>
                     </RouterLink>
                 </div>
             </template>
             <template #todayTasks>
                 <div v-for="task,index in tasks" :key="index">
-                    <div v-if="new Date().toLocaleDateString()===new Date(task.taskDate).toLocaleDateString()" style="display: flex; gap: 10px; margin: 3px;">
+                    <div v-if="showTodayTasks(task)" style="display: flex; gap: 10px; margin: 3px;">
                         <input type="checkbox" v-model="checked"/>
                     <label>
                         {{ task.taskName }}
