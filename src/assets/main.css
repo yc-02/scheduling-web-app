@@ -16,11 +16,15 @@ button{
   cursor: pointer;
   padding: 10px;
   border-radius: 10px;
-  background-color:rgb(210, 210, 235);
+  font-size: 15px;
+}
+.btn-secondary{
+    background-color:var(--primary-color-extra-light);
+
 }
 
 .btn-primary{
-  background-color:rgb(91, 91, 122);
+  background-color:var(--primary-color-dark);
   color: white;
 }
 
@@ -29,20 +33,16 @@ nav{
   gap: 10px;
   
 }
-input{
-  border: none;
-  padding:15px;
-  border-radius: 5px;
-  width: 300px;
-}
-label{
-  width: 300px;
-}
+
 form{
   display: inline-flex;
   flex-direction: column;
-  background-color: rgb(202, 202, 227);
+  background-color:var(--primary-color-light);
   padding: 20px;
   border-radius: 5px;
   gap: 10px;
+}
+.title{
+  font-size: 18px;
+  font-weight: 700;
 }

@@ -19,12 +19,6 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue')
     },
     {
-      path:'/test',
-      name:'test',
-      meta:{title:'Test'},
-      component:()=>import('../views/TestView.vue')
-    },
-    {
       path:'/projects',
       name:'projects',
       meta:{title:'Projects'},
@@ -35,6 +29,12 @@ const router = createRouter({
       name:'project',
       meta:{title:'Project'},
       component:()=>import('../views/ProjectDetailsView.vue')
+    },
+    {
+      path:'/tasks/:slug',
+      name:'tasks',
+      meta:{title:'Task'},
+      component:()=>import('../views/TasksView.vue')
     }
   ]
 })
@@ -44,7 +44,7 @@ router.beforeEach((to,from,next)=>{
     document.title = to.meta.title;
   }
   else{
-    document.title ='test'
+    document.title ='Schedule'
   }
   next();
 })

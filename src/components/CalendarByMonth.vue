@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref,computed} from 'vue'
-
+import { dateSlug } from '@/stores/date';
+import { ref,computed } from 'vue'
+import { RouterLink } from 'vue-router';
 const today = new Date()
 const todayDate = today.getDate()
 const thisYear = today.getFullYear()
@@ -114,42 +115,44 @@ function nextMonthDatesStype(index:number){
   }
 }
 
-
-
 </script>
 
 <template>
-    <div class="titleContainer">
-        <p>{{ renderMonth(month) }} {{ year }}</p>
-      <button @click="prevMonth">Last Month</button>
+    <div>
+      <div class="titleContainer">
+      <p>{{ renderMonth(month) }} {{ year }}</p>
+      <button @click="prevMonth"><font-awesome-icon icon="fa-solid fa-chevron-left" /></button>
       <button @click="getToday">Today</button>
-      <button @click="nextMonth">Next Month</button>
+      <button @click="nextMonth"><font-awesome-icon icon="fa-solid fa-chevron-right" /></button>
       <!-- <button @click="year--">Last Year</button>
       <button @click="year++">Next Year</button> -->
     </div>
     <div class="calendarContainer">
       <div class="calendarLeft">
-        <p>Today</p>
+        <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(today)}`}}">
+          <p class="title">Today's tasks</p>
+        </RouterLink>
         <slot name="todayTasks"></slot>
       </div>
       <div class="calendar">
-        <p v-for="day in daysInWeek" :key="day" class="days">
+        <p v-for="day in daysInWeek" :key="day" class="grid-days">
           {{ day }}
         </p>
-        <div v-for="({dates,special},index) in calendarDates" class="dates" 
-        :key="index" 
-        :class="{pastDates:index< getFirstDay,nextMonthDates:nextMonthDatesStype(index),today:todayStyle(index)}"
-        >
-         <p class="dateItems">{{special}}</p>
+          <div v-for="({dates,special},index) in calendarDates" class="grid-dates" 
+          :key="index" 
+          :class="{pastDates:index< getFirstDay,nextMonthDates:nextMonthDatesStype(index)}"
+          >
+          <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(dates)}`}}">
+          <p class="dateItems" :class="{today:todayStyle(index)}">{{special}}</p>
+          </RouterLink>
           <slot name="list" :dates=dates></slot>
         </div>
       </div>
     </div>
+    </div>
 </template>
 <style scoped>
-main{
-  width: 100%;
-}
+
 .titleContainer{
   display: flex;
   justify-content:flex-end;
@@ -157,48 +160,48 @@ main{
   padding: 10px;
   gap: 10px;
 }
-
-.calendar{
-  display: grid;
-  grid-template-columns: repeat(7,1fr);
-  border-left: solid 1px dimgray;
-  border-top: solid 1px dimgray;
-}
-.pastDates, .nextMonthDates{
-  color: rgb(174, 174, 174);
-
-}
-.dates{
-  border-right: solid 1px dimgray;
-  border-bottom: solid 1px dimgray;
-  height: 130px;
-  width: 160px;
-  cursor: pointer;
-}
-.dateItems{
-  padding-left: 10px;
-  padding-top: 6px;
-}
-
-.days{
-  border-bottom: solid 1px dimgray;
-  border-right: solid 1px dimgray;
-  padding: 10px;
-}
-.today{
-  background-color: rgb(218, 218, 246);
-}
 .calendarContainer{
-  display: flex;
+  display: grid;
+  grid-template-columns: 20% 80%;
 }
 .calendarLeft{
-  background-color: rgb(198, 198, 216);
-  display: flex;
-  flex-direction: column;
-  width: 200px;
+  background-color: var(--primary-color-light);
 }
 .calendarLeft p{
   text-align: center;
   margin: 6px;
 }
+.calendar{
+  display: grid;
+  grid-template-columns: repeat(7,1fr);
+  border-top:1px solid var(--border-color-soft);
+  
+}
+.grid-dates{
+  min-height: 130px;
+  border-bottom: 1px solid var(--border-color-soft);
+  border-right: 1px solid var(--border-color-soft);
+}
+
+
+.grid-days{
+  padding: 10px;
+  min-height: 30px;
+  border-right:1px solid var(--border-color-soft);
+  border-bottom: 1px solid var(--border-color-soft);
+}
+
+.pastDates, .nextMonthDates{
+  color: var(--text-color-light);
+
+}
+.dateItems{
+  padding-left: 10px;
+  padding-top: 6px;
+}
+.today{
+  color: rgb(211, 139, 6)
+}
+
+
 </style>

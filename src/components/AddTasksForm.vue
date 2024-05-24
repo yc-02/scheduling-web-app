@@ -26,7 +26,8 @@ const handleSubmit=async()=>{
         taskDate:formatSubmitDate(taskDate.value),
         startTime:startTime.value,
         endTime:endTime.value,
-        details:taskDetails.value
+        details:taskDetails.value,
+        checked:false
 
     }
     
@@ -55,11 +56,20 @@ const handleSubmit=async()=>{
     </label>
     <label>
         Details
-        <textarea type="text" v-model="taskDetails"></textarea>
+        <input type="text" v-model="taskDetails"/>
     </label>
     <button class="btn-primary">Add Task</button>
     </form>
 </template> 
 <style scoped>
+input{
+  border: none;
+  padding:15px;
+  border-radius: 5px;
+  width: 300px;
+}
+label{
+  width: 300px;
+}
 
 </style>

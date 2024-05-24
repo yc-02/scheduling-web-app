@@ -10,8 +10,13 @@ const formatSubmitDate = (date:string)=>{
     return format(getUTCDate(date),'MMM dd, yyyy')
     
 }
+const dateSlug = (date:Date)=>{
+    return date.toJSON().split('T')[0]
+  }
 
 export {
     getUTCDate,
     inputDefaultToday,
-    formatSubmitDate}
+    dateSlug,
+    formatSubmitDate
+}
