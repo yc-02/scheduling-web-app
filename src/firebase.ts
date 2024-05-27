@@ -20,5 +20,5 @@ const firebaseConfig = {
 // Initialize Firebase
 export const firebaseApp = initializeApp(firebaseConfig);
 export const db = getFirestore(firebaseApp)
-export const listsRef = collection(db, 'lists')
-export const taskRef = collectionGroup(db,'tasks')
+export const projectsCollectionRef = collection(db, 'projects')
+export const tasksCollectionRef = collectionGroup(db,'tasks')

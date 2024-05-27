@@ -1,7 +1,7 @@
 /* color palette from <https://github.com/vuejs/theme> */
 :root {
-  --primary-color:rgb(119, 119, 236);
-  --primary-color-dark:rgb(91, 91, 122);
+  --primary-color:#88B2CC;
+  --primary-color-dark:#658EA9;
   --primary-color-light:rgb(213, 213, 234);
   --primary-color-extra-light:rgb(227, 227, 248);
   --text-color-light:rgb(174, 174, 174);

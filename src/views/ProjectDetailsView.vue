@@ -1,34 +1,31 @@
 <script setup lang="ts">
-import { db } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import { useRoute } from 'vue-router';
-import { useCollection} from 'vuefire';
+import { db } from '@/firebase'
+import { collection } from 'firebase/firestore'
+import { useRoute } from 'vue-router'
+import { useCollection } from 'vuefire'
 import TasksTable from '@/components/TasksTable.vue'
-import { fetchProjectById } from '@/stores/projects';
-import { ref } from 'vue';
+import { fetchProjectById, fetchTasksByProjectId } from '@/stores/fetchData'
+import { ref, type Ref } from 'vue'
+import AddTasksForm from '@/components/AddTasksForm.vue'
+import { inputDefaultDate } from '@/stores/formatDates'
+import type { Task } from 'env'
 
 const route = useRoute()
-const listId = route.params.id.toString()
+const projectId = route.params.id.toString()
 //get data from firebase
-const list = ref()
-fetchProjectById(list,listId)
+const project = ref()
+fetchProjectById({ project: project, id: projectId })
 
-// sub collection tasks
-const projectTasksRef = collection(db,'lists',listId,'tasks')
-const tasks = useCollection(projectTasksRef)
-
-
+// tasks by project id
+const projectTasksRef = collection(db, 'projects', projectId, 'tasks')
+const tasks:Ref<Task[]>=ref([])
+fetchTasksByProjectId({projectId:projectId,tasksById:tasks})
 </script>
 
 <template>
-    <main>
-    <TasksTable :listFromParent="list" :tasksFromParent="tasks" :tasksRef="projectTasksRef"></TasksTable>
-    </main>
+  <main>
+    <TasksTable :projectFromParent="project" :tasksFromParent="tasks" :tasksRef="projectTasksRef" />
+  </main>
 </template>
 
-
-
-<style scoped>
-
-
-</style>
+<style scoped></style>

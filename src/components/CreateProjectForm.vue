@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { listsRef } from '@/firebase';
-import { formatSubmitDate, inputDefaultToday } from '@/stores/date';
+import { projectsCollectionRef } from '@/firebase';
+import { formatSubmitDate, inputDefaultDate } from '@/stores/formatDates';
 import { addDoc} from 'firebase/firestore';
 import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const listName:Ref<string> = ref('')
-const startDate:Ref<string> = ref(inputDefaultToday)
-const endDate:Ref<string>=ref(inputDefaultToday)
+const projectName:Ref<string> = ref('')
+const startDate:Ref<string> = ref(inputDefaultDate(new Date().toString()))
+const endDate:Ref<string>=ref(inputDefaultDate(new Date().toString()))
 const important = ref(false)
 
 
@@ -17,13 +17,13 @@ const route = useRouter()
 
 const handleSubmit=async()=>{
     const newProject = {
-        listName:listName.value,
+        projectName:projectName.value,
         startDate:formatSubmitDate(startDate.value),
         endDate:formatSubmitDate(endDate.value),
         important:important.value
 
     }
-    await addDoc(listsRef,newProject).then((docRef)=>{
+    await addDoc(projectsCollectionRef,newProject).then((docRef)=>{
         route.push({name:'project',params:{id:docRef.id}})
     })
 }
@@ -34,7 +34,7 @@ const handleSubmit=async()=>{
         <form @submit.prevent="handleSubmit">
             <label>
                 Name
-                <input placeholder="Name"  v-model.trim="listName" required />
+                <input placeholder="Name"  v-model.trim="projectName" required />
             </label>
             <label>
                 Start Date

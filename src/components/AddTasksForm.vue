@@ -1,75 +1,91 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { CollectionReference, addDoc, type DocumentData } from 'firebase/firestore';
-import type { Tasks } from 'env';
-import { formatSubmitDate, inputDefaultToday } from '@/stores/date';
-
+import { formatSubmitDate } from '@/stores/formatDates';
+import { useRouter } from 'vue-router';
+const props = defineProps<{
+    tasksRef:CollectionReference<DocumentData,DocumentData>;
+    minDate:string;
+    maxDate:string;
+    clicked:{date:string,time:string};
+}>()
 
 const taskName = ref('')
-const taskDate = ref(inputDefaultToday)
-const startTime = ref()
+const taskDate = ref(props.clicked.date)
+const startTime = ref(props.clicked.time)
 const endTime = ref()
 const taskDetails=ref('')
 
-const props = defineProps({
-    tasksRef:{
-        type: Object as () => CollectionReference<DocumentData, DocumentData>,
-        required:true
-}
+watch(props,(newValue,oldValue)=>{
+    taskDate.value=newValue.clicked.date
+    startTime.value=newValue.clicked.time
+
+
 })
-
-
+const router = useRouter()
 const handleSubmit=async()=>{
-
-    const newTask:Tasks={
+    let newTask
+    if(taskDate.value && startTime.value){
+        newTask={
         taskName:taskName.value,
         taskDate:formatSubmitDate(taskDate.value),
         startTime:startTime.value,
         endTime:endTime.value,
         details:taskDetails.value,
-        checked:false
-
-    }
+        checked:false,
+    }}
     
-    await addDoc(props.tasksRef,newTask)
+    await addDoc(props.tasksRef,newTask).then(()=>{
+        router.go(0)
+    })
 }
+
+
+
 //submit form
 </script>
 <template>
-    <form style="display: flex; flex-direction: column;" @submit.prevent="handleSubmit">
+    <form style="display: inline-flex; flex-direction: column;" @submit.prevent="handleSubmit">
         <p style="text-align: center;">Add Tasks</p>
-    <label>
-        Task Name
-        <input type="text" placeholder="Task Name" v-model="taskName" required>
-    </label>
-    <label>
-       Task Date
-        <input type="date" v-model="taskDate" required/>
-    </label>
-    <label>
-        Start Time
-        <input type="time" v-model="startTime" required/>
-    </label>
-    <label>
-        End Time
-        <input type="time" v-model="endTime" required/>
-    </label>
-    <label>
-        Details
-        <input type="text" v-model="taskDetails"/>
-    </label>
-    <button class="btn-primary">Add Task</button>
+        <label>
+            Task Name
+            <input type="text" placeholder="Task Name" v-model="taskName" required>
+        </label>
+        <label>
+           Task Date
+            <input type="date" v-model="taskDate" required :min="minDate" :max="maxDate"/>
+        </label>
+        <label>
+            Start Time
+            <input type="time" required v-model="startTime"/>
+        </label>
+        <label>
+            End Time
+            <input type="time" v-model="endTime" required/>
+        </label>
+        <label>
+            Details
+            <input type="text" v-model="taskDetails"/>
+        </label>
+        <button class="btn-primary">Add Task</button>
     </form>
 </template> 
 <style scoped>
+form{
+    background-color: var(--primary-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 1px 1px rgb(0, 0, 0,0.1);
+}
 input{
-  border: none;
-  padding:15px;
-  border-radius: 5px;
-  width: 300px;
+    padding: 10px;
+    width: 300px;
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
 label{
-  width: 300px;
+    width: 300px;
 }
 
 </style>

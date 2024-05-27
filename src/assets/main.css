@@ -34,15 +34,15 @@ nav{
   
 }
 
-form{
-  display: inline-flex;
-  flex-direction: column;
-  background-color:var(--primary-color-light);
-  padding: 20px;
-  border-radius: 5px;
-  gap: 10px;
-}
 .title{
   font-size: 18px;
   font-weight: 700;
+}
+
+::-webkit-scrollbar {
+  height: 19px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color-dark); 
+  border-radius: 10px;
 }

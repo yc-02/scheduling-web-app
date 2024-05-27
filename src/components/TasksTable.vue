@@ -1,358 +1,342 @@
 <script setup lang="ts">
-import { eachDayOfInterval, eachHourOfInterval, format} from 'date-fns';
-import { nextTick, onMounted, ref, watch, type Ref } from 'vue';
+import { eachDayOfInterval, format } from 'date-fns'
+import { nextTick, onMounted, ref, watch, type Ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
-import { deleteDoc, doc, type CollectionReference, type DocumentData } from 'firebase/firestore';
-import type { DatesType, Lists } from 'env';
-import { sortTasksByTime } from '@/stores/projects';
-import { db } from '@/firebase';
-import { useRouter } from 'vue-router';
-
+import { type CollectionReference, type DocumentData } from 'firebase/firestore'
+import type { DatesType, Project } from 'env'
+import { sortTasksByTime } from '@/stores/fetchData'
+import { formattedTimeline,doTimesOverlap, getTasksPosition } from '@/stores/tableStyles'
+import { formatSubmitDate, inputDefaultDate } from '@/stores/formatDates'
+import AddTasksForm from '@/components/AddTasksForm.vue'
+import { handleDeleteDoc } from '@/stores/deleteData'
+import { add } from 'date-fns/fp/add'
 const props = defineProps<{
-  listFromParent: DocumentData|undefined|Lists
-  tasksFromParent:DocumentData[]|undefined
-  tasksRef?: CollectionReference<DocumentData, DocumentData>
+  projectFromParent: DocumentData | undefined | Project
+  tasksFromParent: DocumentData[] | undefined
+  tasksRef: CollectionReference<DocumentData, DocumentData>
 }>()
 
-
-const list = ref(props.listFromParent)
-const tasks= ref(props.tasksFromParent)
-
+const project = ref(props.projectFromParent)
+const tasks = ref(props.tasksFromParent)
 
 //total days in project
-const dates:Ref<DatesType[]|undefined>= ref([])
-
+const dates: Ref<DatesType[]> = ref([])
 
 //create dates
-const totalDates=()=>{
-    let dates
-    if(list.value?.startDate && list.value?.endDate){
-        dates = eachDayOfInterval({
-        start: new Date(list.value.startDate),
-        end: new Date(list.value.endDate)
-        })
-    }
-    return dates
-}
-const getProjectDates = () =>{
-    const dates = totalDates()
-    let datesVaule
-    if(dates!==undefined){
-        datesVaule=dates.map(item=>{
-            return {formatDate:format(new Date(item),'EEE, dd'),date:new Date(item)}
-        })
-    
-    }
+const getProjectDates = () => {
+  const dates = eachDayOfInterval({
+      start: new Date(project.value?.startDate),
+      end: new Date(project.value?.endDate)
+    })
+  const datesVaule = dates.map((item) => {
+    return { formatDate: format(new Date(item), 'EEE, dd'), date: new Date(item) }
+  })
+  
 
-    return datesVaule
+  return datesVaule
 }
 
-
-//generate a timeline from 12:00 AM to 12:00 AM
-const timeline = eachHourOfInterval({
-  start: new Date(2024, 10, 29, 0),
-  end: new Date(2024, 10, 29, 24)
-})
-
-//formatted timeline
-const formattedTimeline = timeline.map(item=>{
-    return format(new Date(item),'HH:mm')
-})
-
-
-    
 //change table rows color
-const tableRowStyle = ()=>{
-    const tableRows = document.querySelectorAll('.tableRows')
-    for(let i=0; i<tableRows.length; i++){
-        const row = tableRows[i] as HTMLElement;
-        if(i%2 ===0){
-            row.style.backgroundColor='rgb(237,237,237)'
-        }else{
-            row.style.backgroundColor='white'
-        }
+const tableRowStyle = () => {
+  const tableRows = document.querySelectorAll('.tableRows')
+  for (let i = 0; i < tableRows.length; i++) {
+    const row = tableRows[i] as HTMLElement
+    if (i % 2 === 0) {
+      row.style.backgroundColor = 'rgb(237,237,237)'
+    } else {
+      row.style.backgroundColor = 'white'
     }
+  }
 }
-
 
 //loading before render
-const isLoading=ref(true)
+const isLoading = ref(true)
 
 //table style
-const myTable:Ref<HTMLElement|null>=ref(null)
-const projectRef:Ref<HTMLElement[]|null> = ref([])
+const myTable: Ref<HTMLElement | null> = ref(null)
+const projectRef: Ref<HTMLElement[] | null> = ref([])
 const tableDataWidth = ref(0)
-const tableDataIndexWidth = ref(50)
+const tableDataIndexWidth = ref(60)
 const tableWidth = ref(1000)
 
-
 //table style
-const tableStyle=()=>{
-    const table: HTMLElement|null = myTable.value
-        const dates = totalDates()
-    nextTick(()=>{
+const tableStyle = () => {
+  const table: HTMLElement | null = myTable.value
+  if (dates.value.length > 3) {
+    tableWidth.value = 2000
+  } else {
+    tableWidth.value = 1000
+  }
+  nextTick(() => {
     const tableData = document.getElementsByTagName('td')
-        if(table!==null && dates!==undefined){
-        tableDataIndexWidth.value=60
-        tableData[0].style.width=`60px`
-        table.style.width=`${tableWidth.value}px`
-        for(let i=1;i<=dates.length;i++){
-                tableData[i].style.width=`${tableWidth.value/dates.length}px`
-            }
-        tableDataWidth.value=(tableWidth.value-tableDataIndexWidth.value)/(dates.length)
-   
+    if (table !== null) {
+      tableDataIndexWidth.value = 60
+      tableData[0].style.width = `60px`
+      table.style.width = `${tableWidth.value}px`
+      for (let i = 1; i <= dates.value.length; i++) {
+        tableData[i].style.width = `${tableWidth.value / dates.value.length}px`
+      }
+      tableDataWidth.value = (tableWidth.value - tableDataIndexWidth.value) / dates.value.length
     }
-
-    })
+  })
 }
 
-//origin tasks style on table
-const showTasks=(startTime:string,taskDate:string,endTime:string)=>{
-    let getEndTime
-    if(parseInt(endTime.split(':')[1])>=30){
-        getEndTime= `${parseInt(endTime.split(':')[0])+1}:00`
-    }else{
-        getEndTime = `${endTime.split(':')[0]}:00`
-    }
-    const getStartTime =  `${startTime.split(':')[0]}:00`
 
-    const startTimeIndex = formattedTimeline.indexOf(getStartTime)
-    const endTimeIndex = formattedTimeline.indexOf(getEndTime)
-    const formattedTaskDate = format(new Date(taskDate),'EEE, dd')
-
-    const dateIndex = dates.value?.findIndex(date=>date.formatDate.includes(formattedTaskDate)) 
-
-    const pxLeft= dateIndex!==undefined?(dateIndex)*tableDataWidth.value+tableDataIndexWidth.value:0
-    const pxTop= (startTimeIndex+1)*30
-    const height=(endTimeIndex-startTimeIndex+1)*30
- 
-    const style = `top: ${pxTop}px; left: ${pxLeft}px; height:${height}px`
-
-    return style
-
-}
-
-function generateColors(numItems:number) {
-  const colors = ['#ff8166', '#99ffab', '#ab99ff']; // Predefined colors
-  const numColors = colors.length;
-  const colorMap = [];
+//when same time slots have many tasks
+function generateColors(numItems: number) {
+  const colors = ['#F4B9B8', '#549BAD', '#96AD90'] // Predefined colors
+  const numColors = colors.length
+  const colorMap = []
 
   for (let i = 0; i < numItems; i++) {
-    colorMap[i] = colors[i % numColors];
+    colorMap[i] = colors[i % numColors]
   }
 
-  return colorMap;
+  return colorMap
 }
-//when same time slots have many tasks
-const tasksStyle=()=>{
-    const count:any ={}
-    const samedayDiv:HTMLElement[]=[]
-    const notSameDay:HTMLElement[]=[]
-    nextTick(()=>{
-        if(projectRef.value){
-            for(let i=0; i<projectRef.value.length; i++){
-            const task = projectRef.value[i]
-                if(count[task.style.left]){
-                    count[task.style.left]++
-                }else{
-                    count[task.style.left]=1
-                }
-            }
-            for(let i=0; i<projectRef.value.length; i++){
-                const task = projectRef.value[i]
-                if(count[task.style.left]>1){
-                    samedayDiv.push(task)
-                }else{
-                    notSameDay.push(task)
-                }
-            }
-            const colorMap = generateColors(samedayDiv.length);
-            for(let i=0; i<samedayDiv.length; i++){
-                const newWidth=tableDataWidth.value/samedayDiv.length
-                samedayDiv[i].style.width=`${newWidth}px`
-                samedayDiv[i].style.left=`${parseInt(samedayDiv[i].style.left)+i*newWidth}px`
-                const child:HTMLElement|null= samedayDiv[i].querySelector('.tasksItems')
-                if(child){
-                    child.style.backgroundColor=colorMap[i]
-                }
-                
-            }
-            for(let i=0; i<notSameDay.length; i++){
-                const width = tableDataWidth.value
-                notSameDay[i].style.width=`${width}px`
-            }
+const tasksStyle = () => {
+  const count: any = {}
+  const samedayDiv: HTMLElement[] = []
+  nextTick(() => {
+    if (projectRef.value) {
+      for (let i = 0; i < projectRef.value.length; i++) {
+        const task: HTMLElement = projectRef.value[i]
+        const taskDate = task.dataset.date ?? ''
+        const startTime = task.dataset.start ?? ''
+        const endTime = task.dataset.end ?? ''
+        const position = getTasksPosition({ 
+          taskDate, startTime, endTime,tableDataWidth:tableDataWidth.value,
+          tableDataIndexWidth:tableDataIndexWidth.value,dates:dates.value })
+        projectRef.value[i].style.top = position.top
+        projectRef.value[i].style.left = position.left
+        projectRef.value[i].style.height = position.height
+        projectRef.value[i].style.width = position.width
+        if (taskDate && count[taskDate]) {
+          count[taskDate]++
+        } else if (taskDate) {
+          count[taskDate] = 1
         }
-    })
+      }
 
+      for (let i = 0; i < projectRef.value.length; i++) {
+        const task = projectRef.value[i]
+        const taskDate = task.dataset.date
+        if (taskDate && count[taskDate] > 1) {
+          samedayDiv.push(task)
+        }
+      }
+
+      const overlaps = []
+      for (let i = 0; i < samedayDiv.length; i++) {
+        for (let j = i + 1; j < samedayDiv.length; j++) {
+          const start1: string = samedayDiv[i].dataset.start ?? ''
+          const end1: string = samedayDiv[i].dataset.end ?? ''
+          const start2: string = samedayDiv[j].dataset.start ?? ''
+          const end2: string = samedayDiv[j].dataset.end ?? ''
+          if (doTimesOverlap({ start1, end1, start2, end2 })) {
+            overlaps.push({ div: samedayDiv[i] }, { div: samedayDiv[j] })
+          }
+        }
+      }
+      const colorMap = generateColors(overlaps.length)
+      for (let i = 0; i < overlaps.length; i++) {
+        const newWidth = tableDataWidth.value / overlaps.length
+        overlaps[i].div.style.width = `${newWidth}px`
+        overlaps[i].div.style.left = `${parseInt(samedayDiv[0].style.left) + i * newWidth}px`
+        const child: HTMLElement | null = samedayDiv[i].querySelector('.tasksItems')
+        if (child) {
+          child.style.backgroundColor = colorMap[i]
+        }
+      }
+    }
+  })
 }
-
 
 const showModal = ref()
 
-const handleClick = (index:number)=>{
-    console.log('clicked',index)
-    showModal.value[index]=true
-    for (const key in showModal.value){
-        if(parseInt(key)!==index){
-            showModal.value[key]=false
-        }
+const toggleModal = (index: number) => {
+  console.log('clicked', index)
+  showModal.value[index] = true
+  for (const key in showModal.value) {
+    if (parseInt(key) !== index) {
+      showModal.value[key] = false
     }
-     
+  }
 }
+
 const target = ref(null)
-const closeModal=()=>{
-    for (const key in showModal.value){
-        showModal.value[parseInt(key)]=false
-    }
+const closeModal = () => {
+  for (const key in showModal.value) {
+    showModal.value[parseInt(key)] = false
+  }
 }
-onClickOutside(target,closeModal)
-
-
+onClickOutside(target, closeModal)
 
 //onmounted change table style
-onMounted(()=>{
-    tableRowStyle()
+onMounted(() => {
+  tableRowStyle()
 })
 
 //watch data change
-watch(() => props.listFromParent, (newValue) => {
-    list.value=newValue
-    dates.value = getProjectDates()
-    tableStyle()
-
-});
-
-watch(()=>props.tasksFromParent,(newValue)=>{
-    tasks.value=newValue
-    showModal.value=tasks.value?.map(()=>false)
-    tasksStyle()
-    sortTasksByTime(tasks)
-    isLoading.value=false
+watch(props, (newValue) => {
+  tasks.value = newValue.tasksFromParent
+  project.value = newValue.projectFromParent
+  dates.value = getProjectDates()
+  tasksStyle()
+  tableStyle()
+  sortTasksByTime({ tasks })
+  showModal.value = tasks.value?.map(() => false)
+  isLoading.value = false
 })
 
-const router = useRouter()
 
-const handleDelete=async(path:string)=>{
-    await deleteDoc(doc(db,path)).then(()=>{
-        console.log('deleted')
-    }).then(()=>{
-        router.push('/')
-    }).catch(err=>console.log(err))
+
+type DateAndTime = {
+  date: string
+  time: string
 }
-const currentRouterPath = router.currentRoute.value.fullPath
-const showDeleteProject = currentRouterPath.includes('/projects')
+const showForm = ref(false)
+const clicked:Ref<DateAndTime> = ref({date:'',time:''})
+const handleDateTime = (date: string, time: string) => {
+  showForm.value = true
+  clicked.value={date:inputDefaultDate(date),time:time}
+}
+
+const addForm=ref(null)
+const handleClickOutside=()=>{
+  showForm.value=false
+}
+
+onClickOutside(addForm,handleClickOutside)
 </script>
 
-
 <template>
-    <div v-if="isLoading">
-        Loading...
+  <div v-if="isLoading">Loading...</div>
+  <div class="headerContainer">
+    <p class="title">{{ project?.projectName }}</p>
+    <div v-if="dates && dates.length > 1">{{ project?.startDate }} - {{ project?.endDate }}</div>
+    <div v-else>
+      {{ project?.startDate }}
     </div>
-    <!-- <div style="display: inline-flex; justify-content: center;">
-        <AddTasksForm :tasksRef="tasksRef"/>
-    </div> -->
-    <div v-if="showDeleteProject">
-        <button class="btn-secondary" @click="handleDelete(list?.path)">Delete Project</button>
-    </div>
+  </div>
+  <div class="container">
     <div v-show="!isLoading" class="tableContainer">
-        <div class="headerContainer">
-            <p class="title">{{ list?.listName }}</p>
-            <div v-if="dates && dates.length>1">
-            {{ list?.startDate }} to {{ list?.endDate }}
+      <table style="position: relative" ref="myTable">
+        <!-- abosolute position tasks -->
+        <div
+          v-for="(task, i) in tasks"
+          :key="task.id"
+          class="projectTask"
+          :data-date="task.taskDate"
+          :data-start="task.startTime"
+          :data-end="task.endTime"
+          ref="projectRef"
+          @click="toggleModal(i)"
+        >
+          <div class="tasksItems" :class="{ completed: task.checked }">
+            <div class="tasks">
+              <p>{{ task.taskName }}</p>
             </div>
-            <div v-else>
-            {{ list?.startDate }}
-            </div>
+          </div>
+          <!-- tasks modal -->
+          <div class="tasksModal" ref="target" v-if="showModal && showModal[i] &&task.id!=='newItem'">
+            <p>{{ task.taskName }}</p>
+            <p>{{ task.startTime }}-{{ task.endTime }}</p>
+            <p>{{ task.details }}</p>
+            <p>{{ task.checked }}</p>
+            <button @click="handleDeleteDoc({path:task.path})">Delete</button>
+          </div>
         </div>
-        <table style="position: relative;" ref="myTable">
-            <div v-for="task,i in tasks" :key="i" class="projectTask" :style="showTasks(task.startTime,task.taskDate,task.endTime)" ref="projectRef"  @click="handleClick(i)">
-                <div class="tasksItems" :class="{completed:task.checked}">
-                    <div class="tasks">
-                    <p>{{ task.taskName }}</p>
-                    <p>{{ task.startTime }}-{{ task.endTime }}</p>
-                    </div>
-                </div>
-                <div class="tasksModal" ref="target" v-if="showModal && showModal[i]">
-                        <p>{{ task.taskName }}</p>
-                        <p>{{ task.startTime }}-{{ task.endTime }}</p>
-                        <p>{{ task.details }}</p>
-                        <p>{{ task.checked }}</p>
-                </div>
-            </div>
         <tr>
-            <th></th>
-            <th  v-for="date in dates" :key="date.formatDate" class="tableHeader">
-                {{ date.formatDate }}
-            </th>
+          <th></th>
+          <th v-for="date in dates" :key="date.formatDate" class="tableHeader">
+            {{ date.formatDate }}
+          </th>
         </tr>
-        <tr v-for="time,timeIndex in formattedTimeline" :key="timeIndex" class="tableRows">
-            <td>
-               <p style="text-align: center;">{{ time }}</p>
-            </td>
-            <td v-for="date in dates" :key="date.formatDate">
-            </td>
+        <tr v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" class="tableRows">
+          <td>
+            <p style="text-align: center">{{ time }}</p>
+          </td>
+          <td
+            v-for="date in dates"
+            :key="date.formatDate"
+            @dblclick="handleDateTime(date.date.toString(), time)"
+          ></td>
         </tr>
-    </table>
+      </table>
+      <div v-if="showForm" ref="addForm" class="addForm">
+         <AddTasksForm :tasksRef="tasksRef" :minDate="inputDefaultDate(project?.startDate)" :maxDate="inputDefaultDate(project?.endDate)" :clicked="clicked"/>
     </div>
-
+    </div>
+  </div>
 </template>
 
-
-
 <style scoped>
-table{
-    border-collapse: collapse;
-    border:1px solid var(--border-color-light);
+table {
+  border-collapse: collapse;
+  border: 1px solid var(--border-color-light);
 }
 
-td,th{
+td,
+th {
   border-right: 1px solid var(--border-color-light);
   height: 30px;
 }
-.headerContainer{
-    display: flex;
-    align-items: center;
-    gap: 9px;
+.headerContainer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  position: relative;
 }
-.projectTask{
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    cursor: pointer;
+.projectTask {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
 }
-.tasksItems{
-    display: flex;
-    flex-direction: column;
-    border-radius: 10px;
-    height: 100%;
-    width: 90%;
-    box-sizing: content-box;
-    background-color: rgb(213, 213, 234);
-    overflow: hidden;
+.tasksItems {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  height: 100%;
+  width: 90%;
+  box-sizing: content-box;
+  background-color: #88B2CC;
 }
-.tasks{
-    padding: 6px;
+.tasks {
+  padding: 6px;
+  overflow: hidden;
 }
-.tableContainer{
-    display: flex;
-    min-height: 80vh;
-    flex-direction: column;
-    justify-content: center;
+
+.tableContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
-.tasksModal{
-    position: absolute;
-    background-color: white;
-    height: 200px;
-    width: 200px;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 1px 1px rgb(9, 9, 9,0.1);
-    z-index: 3;
+
+.tasksModal {
+  position: absolute;
+  background-color: white;
+  width: 200px;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 1px 1px rgb(9, 9, 9, 0.1);
+  z-index: 3;
+  top: 0;
+  cursor: auto;
 }
-.completed{
-background-color: rgb(187, 187, 187) !important;
+.completed {
+  background-color: rgb(187, 187, 187) !important;
 }
-.completed::before{
-    content: 'completed';
+.completed::before {
+  content: 'completed';
+}
+.addForm{
+  position: absolute;
+  left: 45%;
+  
+
 }
 </style>

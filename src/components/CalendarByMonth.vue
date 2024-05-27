@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { dateSlug } from '@/stores/date';
+import { dateSlug,daysInWeek,renderMonth } from '@/stores/formatDates';
 import { ref,computed } from 'vue'
 import { RouterLink } from 'vue-router';
+
 const today = new Date()
 const todayDate = today.getDate()
 const thisYear = today.getFullYear()
@@ -64,38 +65,7 @@ const calendarDates = computed(()=>{
   return dates
 })
 
-//days in week
-const daysInWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-//render month
-function renderMonth(month:number){
-  switch (month) {
-    case 0:
-      return 'January'
-    case 1:
-      return 'February'
-    case 2:
-      return 'March'
-    case 3:
-      return 'April'
-    case 4:
-      return 'May'
-    case 5:
-      return 'June'
-    case 6:
-      return'July'
-    case 7:
-      return 'August'
-    case 8:
-      return 'September'
-    case 9:
-      return 'October'
-    case 10:
-      return 'November'
-    case 11:
-      return 'December'
-  }
-}
 
 //css style for today cell
 function todayStyle(index:number){
@@ -145,7 +115,7 @@ function nextMonthDatesStype(index:number){
           <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(dates)}`}}">
           <p class="dateItems" :class="{today:todayStyle(index)}">{{special}}</p>
           </RouterLink>
-          <slot name="list" :dates=dates></slot>
+          <slot name="project" :datesAndIndex={dates,index}></slot>
         </div>
       </div>
     </div>
