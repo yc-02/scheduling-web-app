@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { dateSlug,daysInWeek,renderMonth } from '@/stores/formatDates';
+import { dateSlug,daysInWeek,renderMonth } from '@/utils/dateUtils';
 import { ref,computed } from 'vue'
 import { RouterLink } from 'vue-router';
 

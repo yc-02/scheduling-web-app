@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { eachDayOfInterval, format } from 'date-fns'
 import { nextTick, onMounted, ref, watch, type Ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { type CollectionReference, type DocumentData } from 'firebase/firestore'
 import type { DatesType, Project } from 'env'
-import { sortTasksByTime } from '@/stores/fetchData'
-import { formattedTimeline,doTimesOverlap, getTasksPosition } from '@/stores/tableStyles'
-import { formatSubmitDate, inputDefaultDate } from '@/stores/formatDates'
+import { sortTasksByTime } from '@/services/fetchData'
+import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors, getDatesInterval } from '@/utils/taskTable'
+import { inputDefaultDate } from '@/utils/dateUtils'
 import AddTasksForm from '@/components/AddTasksForm.vue'
-import { handleDeleteDoc } from '@/stores/deleteData'
-import { add } from 'date-fns/fp/add'
+import { handleDeleteDoc } from '@/services/deleteData'
 const props = defineProps<{
   projectFromParent: DocumentData | undefined | Project
   tasksFromParent: DocumentData[] | undefined
@@ -21,20 +19,9 @@ const tasks = ref(props.tasksFromParent)
 
 //total days in project
 const dates: Ref<DatesType[]> = ref([])
+//loading before render
+const isLoading = ref(true)
 
-//create dates
-const getProjectDates = () => {
-  const dates = eachDayOfInterval({
-      start: new Date(project.value?.startDate),
-      end: new Date(project.value?.endDate)
-    })
-  const datesVaule = dates.map((item) => {
-    return { formatDate: format(new Date(item), 'EEE, dd'), date: new Date(item) }
-  })
-  
-
-  return datesVaule
-}
 
 //change table rows color
 const tableRowStyle = () => {
@@ -49,8 +36,7 @@ const tableRowStyle = () => {
   }
 }
 
-//loading before render
-const isLoading = ref(true)
+
 
 //table style
 const myTable: Ref<HTMLElement | null> = ref(null)
@@ -81,19 +67,8 @@ const tableStyle = () => {
   })
 }
 
-
 //when same time slots have many tasks
-function generateColors(numItems: number) {
-  const colors = ['#F4B9B8', '#549BAD', '#96AD90'] // Predefined colors
-  const numColors = colors.length
-  const colorMap = []
 
-  for (let i = 0; i < numItems; i++) {
-    colorMap[i] = colors[i % numColors]
-  }
-
-  return colorMap
-}
 const tasksStyle = () => {
   const count: any = {}
   const samedayDiv: HTMLElement[] = []
@@ -104,9 +79,14 @@ const tasksStyle = () => {
         const taskDate = task.dataset.date ?? ''
         const startTime = task.dataset.start ?? ''
         const endTime = task.dataset.end ?? ''
-        const position = getTasksPosition({ 
-          taskDate, startTime, endTime,tableDataWidth:tableDataWidth.value,
-          tableDataIndexWidth:tableDataIndexWidth.value,dates:dates.value })
+        const position = getTasksPosition({
+          taskDate,
+          startTime,
+          endTime,
+          tableDataWidth: tableDataWidth.value,
+          tableDataIndexWidth: tableDataIndexWidth.value,
+          dates: dates.value
+        })
         projectRef.value[i].style.top = position.top
         projectRef.value[i].style.left = position.left
         projectRef.value[i].style.height = position.height
@@ -164,13 +144,13 @@ const toggleModal = (index: number) => {
   }
 }
 
-const target = ref(null)
+const modalTarget = ref(null)
 const closeModal = () => {
   for (const key in showModal.value) {
     showModal.value[parseInt(key)] = false
   }
 }
-onClickOutside(target, closeModal)
+onClickOutside(modalTarget, closeModal)
 
 //onmounted change table style
 onMounted(() => {
@@ -181,33 +161,31 @@ onMounted(() => {
 watch(props, (newValue) => {
   tasks.value = newValue.tasksFromParent
   project.value = newValue.projectFromParent
-  dates.value = getProjectDates()
   tasksStyle()
+  dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
   tableStyle()
   sortTasksByTime({ tasks })
   showModal.value = tasks.value?.map(() => false)
   isLoading.value = false
 })
 
-
-
 type DateAndTime = {
   date: string
   time: string
 }
 const showForm = ref(false)
-const clicked:Ref<DateAndTime> = ref({date:'',time:''})
+const clicked: Ref<DateAndTime> = ref({ date: '', time: '' })
 const handleDateTime = (date: string, time: string) => {
   showForm.value = true
-  clicked.value={date:inputDefaultDate(date),time:time}
+  clicked.value = { date: inputDefaultDate(date), time: time }
 }
 
-const addForm=ref(null)
-const handleClickOutside=()=>{
-  showForm.value=false
+const addForm = ref(null)
+const handleClickOutside = () => {
+  showForm.value = false
 }
 
-onClickOutside(addForm,handleClickOutside)
+onClickOutside(addForm, handleClickOutside)
 </script>
 
 <template>
@@ -239,12 +217,16 @@ onClickOutside(addForm,handleClickOutside)
             </div>
           </div>
           <!-- tasks modal -->
-          <div class="tasksModal" ref="target" v-if="showModal && showModal[i] &&task.id!=='newItem'">
+          <div
+            class="tasksModal"
+            ref="modalTarget"
+            v-if="showModal && showModal[i] && task.id !== 'newItem'"
+          >
             <p>{{ task.taskName }}</p>
             <p>{{ task.startTime }}-{{ task.endTime }}</p>
             <p>{{ task.details }}</p>
             <p>{{ task.checked }}</p>
-            <button @click="handleDeleteDoc({path:task.path})">Delete</button>
+            <button @click="handleDeleteDoc({ path: task.path })">Delete</button>
           </div>
         </div>
         <tr>
@@ -265,8 +247,13 @@ onClickOutside(addForm,handleClickOutside)
         </tr>
       </table>
       <div v-if="showForm" ref="addForm" class="addForm">
-         <AddTasksForm :tasksRef="tasksRef" :minDate="inputDefaultDate(project?.startDate)" :maxDate="inputDefaultDate(project?.endDate)" :clicked="clicked"/>
-    </div>
+        <AddTasksForm
+          :tasksRef="tasksRef"
+          :minDate="inputDefaultDate(project?.startDate)"
+          :maxDate="inputDefaultDate(project?.endDate)"
+          :clicked="clicked"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -301,7 +288,7 @@ th {
   height: 100%;
   width: 90%;
   box-sizing: content-box;
-  background-color: #88B2CC;
+  background-color: #88b2cc;
 }
 .tasks {
   padding: 6px;
@@ -333,10 +320,8 @@ th {
 .completed::before {
   content: 'completed';
 }
-.addForm{
+.addForm {
   position: absolute;
   left: 45%;
-  
-
 }
 </style>

@@ -4,10 +4,10 @@ import { collection } from 'firebase/firestore'
 import { useRoute } from 'vue-router'
 import { useCollection } from 'vuefire'
 import TasksTable from '@/components/TasksTable.vue'
-import { fetchProjectById, fetchTasksByProjectId } from '@/stores/fetchData'
+import { fetchProjectById, fetchTasksByProjectId } from '@/services/fetchData'
 import { ref, type Ref } from 'vue'
 import AddTasksForm from '@/components/AddTasksForm.vue'
-import { inputDefaultDate } from '@/stores/formatDates'
+import { inputDefaultDate } from '@/utils/dateUtils'
 import type { Task } from 'env'
 
 const route = useRoute()
@@ -18,8 +18,8 @@ fetchProjectById({ project: project, id: projectId })
 
 // tasks by project id
 const projectTasksRef = collection(db, 'projects', projectId, 'tasks')
-const tasks:Ref<Task[]>=ref([])
-fetchTasksByProjectId({projectId:projectId,tasksById:tasks})
+const tasks: Ref<Task[]> = ref([])
+fetchTasksByProjectId({ projectId: projectId, tasksById: tasks })
 </script>
 
 <template>

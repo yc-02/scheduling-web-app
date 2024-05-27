@@ -43,20 +43,7 @@ const  doTimesOverlap = ({
     return startMinutes1 < endMinutes2 && startMinutes2 < endMinutes1
   }
 
-  const getProjectDates = ({startDate,endDate}:{startDate:string,endDate:string}) => {
-    const dates = eachDayOfInterval({
-        start: new Date(startDate),
-        end: new Date(endDate)
-      })
-    
-      const datesVaule = dates.map((item) => {
-        return { formatDate: format(new Date(item), 'EEE, dd'), date: new Date(item) }
-      })
-    
-  
-    return datesVaule
-  }
-
+ 
 
 
 
@@ -98,13 +85,38 @@ const  doTimesOverlap = ({
       width: `${tableDataWidth}px`
     }
   }
+  function generateColors(numItems: number) {
+    const colors = ['#F4B9B8', '#549BAD', '#96AD90'] // Predefined colors
+    const numColors = colors.length
+    const colorMap = []
+  
+    for (let i = 0; i < numItems; i++) {
+      colorMap[i] = colors[i % numColors]
+    }
+  
+    return colorMap
+  }
 
 
+  const getDatesInterval = ({startDate,endDate}:{startDate:string,endDate:string}) => {
+    const dates = eachDayOfInterval({
+      start: new Date(startDate),
+      end: new Date(endDate)
+    })
+    const datesVaule = dates.map((item) => {
+      return { formatDate: format(new Date(item), 'EEE, dd'), date: new Date(item) }
+    })
+  
+    return datesVaule
+  }
+  
 
   export{
     formattedTimeline,
     timeToMinutes,
     doTimesOverlap,
-    getTasksPosition
+    getTasksPosition,
+    generateColors,
+    getDatesInterval
   }
 

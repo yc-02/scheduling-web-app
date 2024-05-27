@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { CollectionReference, addDoc, type DocumentData } from 'firebase/firestore';
-import { formatSubmitDate } from '@/stores/formatDates';
 import { useRouter } from 'vue-router';
+import { formatSubmitDate } from '@/utils/dateUtils';
 const props = defineProps<{
     tasksRef:CollectionReference<DocumentData,DocumentData>;
     minDate:string;

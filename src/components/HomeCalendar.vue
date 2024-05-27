@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { isAfter, isBefore, isEqual } from 'date-fns'
-import CalendarByMonth from './CalendarByMonth.vue'
-import { computed, nextTick, onMounted, ref, watch, type Ref } from 'vue'
-import { doc, updateDoc, type DocumentData } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { fetchAllProjects, fetchAllTasksByDate, sortProjectByStart, sortTasksByTime } from '@/stores/fetchData'
-import { formatSubmitDate } from '@/stores/formatDates'
-import type { Project, Task } from 'env'
+import { isAfter, isBefore, isEqual } from 'date-fns';
+import CalendarByMonth from './CalendarByMonth.vue';
+import { computed, nextTick, ref, watch, type Ref } from 'vue';
+import { doc, updateDoc, type DocumentData } from 'firebase/firestore';
+import { db } from '@/firebase';
+import {
+  fetchAllProjects,
+  fetchAllTasksByDate,
+  sortProjectByStart,
+  sortTasksByTime
+} from '@/services/fetchData';
+
+import type { Project, Task } from 'env';
+import { formatSubmitDate } from '@/utils/dateUtils';
+import { onClickOutside } from '@vueuse/core';
 
 const todayTasks: Ref<Task[]> = ref([])
 const projects: Ref<Project[]> = ref([])
@@ -16,23 +23,15 @@ fetchAllProjects({ projects: projects })
 const today = formatSubmitDate(new Date().toDateString())
 fetchAllTasksByDate({ tasks: todayTasks, date: today, isLoading: isLoading })
 
-
-
-const limitedProjects = computed(()=>{
-  let slicedProject
-  if(projects.value.length>3){
-    slicedProject= projects.value.slice(0,3)
-  }else{
-    slicedProject=projects.value
-  }
-  return slicedProject
-})
-
-const showProjects = (slotProps: { datesAndIndex: {
-    dates: Date;
-    index: number;
-} }, 
-project: DocumentData) => {
+const showProjects = (
+  slotProps: {
+    datesAndIndex: {
+      dates: Date
+      index: number
+    }
+  },
+  project: DocumentData
+) => {
   return (
     (isBefore(slotProps.datesAndIndex.dates, new Date(project.endDate)) &&
       isAfter(slotProps.datesAndIndex.dates, new Date(project.startDate))) ||
@@ -41,21 +40,63 @@ project: DocumentData) => {
   )
 }
 
+const projectRef: Ref<HTMLElement[]> = ref([])
+
+//when more than 3 projects in one day
+const showMoreProjects = () => {
+  const count: any = {}
+  const countPosition: any[] = []
+  nextTick(() => {
+    for (let i = 0; i < projectRef.value?.length; i++) {
+      const project = projectRef.value[i]
+      const positionIndex = project.dataset.dateindex
+      if (positionIndex && count[positionIndex]) {
+        count[positionIndex]++
+      } else if (positionIndex) {
+        count[positionIndex] = 1
+      }
+    }
+    for (let i = 0; i < projectRef.value.length; i++) {
+      const project = projectRef.value[i]
+      const positionIndex = project.dataset.dateindex
+      if (positionIndex && count[positionIndex] > 3) {
+        const index = parseInt(positionIndex)
+        countPosition[index] = countPosition[index] || []
+        countPosition[index].push(project)
+      }
+    }
+
+    for (let i = 0; i < countPosition.length; i++) {
+      const divArray = countPosition[i] as HTMLElement[]
+      if (Array.isArray(divArray)) {
+        const newNode = document.createElement('button');
+          newNode.innerText=`+${divArray.length - 3} More`
+          newNode.className='showMore'
+          newNode.onclick = () => {
+         clickedIndex.value=divArray[2].dataset.dateindex
+        };
+
+          divArray[2].insertAdjacentElement('afterend', newNode)
+        
+        const divLength = divArray.length
+        for (let i = 3; i < divLength; i++) {
+          divArray[i].style.display = 'none'
+        }
+      }
+    }
+  })
+}
+
+
+
+// today's tasks checked
 const checked: Ref<boolean[]> = ref([])
-const checkedInitialValue = computed(()=>{
+
+const checkedInitialValue = computed(() => {
   return todayTasks.value.map((task) => task.checked)
 })
-checked.value=checkedInitialValue.value
 
-
-watch(todayTasks, () => {
-  sortTasksByTime({ tasks: todayTasks })
-})
-
-watch(projects,()=>{
-  sortProjectByStart({projects:projects.value})
-  showPlus()
-})
+checked.value = checkedInitialValue.value
 
 const handleCheckChange = async (index: number) => {
   const path = todayTasks.value[index].path
@@ -74,66 +115,50 @@ const handleCheckChange = async (index: number) => {
   }
 }
 
-const projectRef:Ref<HTMLElement[]> = ref([])
-const showPlus = ()=>{
-  const count:any={}
-  const countPosition:any[] = []
-  nextTick(()=>{
-    for(let i=0;i<projectRef.value?.length;i++){
-      const project = projectRef.value[i]
-     const positionIndex = project.dataset.dateindex
-     if(positionIndex && count[positionIndex]){
-      count[positionIndex]++
-     }else if(positionIndex){
-      count[positionIndex] =1
-     }
+watch(todayTasks, () => {
+  sortTasksByTime({ tasks: todayTasks })
+})
 
-    }
-    for(let i=0; i<projectRef.value.length;i++){
-      const project = projectRef.value[i]
-      const positionIndex = project.dataset.dateindex
-      if(positionIndex && count[positionIndex]>3){
-        const index = parseInt(positionIndex)
-        countPosition[index] = countPosition[index] || []
-        countPosition[index].push(project)
-      }
-    }
-
-    for (let i = 0; i < countPosition.length; i++) {
-        const divArray = countPosition[i] as HTMLElement[]
-        if (Array.isArray(divArray)) {
-          const newPTag = `<button class="showMore">+${divArray.length-3} more</button>`
-          divArray[2].insertAdjacentHTML('afterend',newPTag)
-          const divLength =divArray.length
-          for(let i=3;i<divLength;i++){
-            divArray[i].style.display='none'
-          }
-
-          }
-    }
-
-    
-  })
+watch(projects, () => {
+  sortProjectByStart({ projects: projects.value })
+  showMoreProjects()
+})
+const clickedIndex = ref()
+const showAllProjects = ref(null)
+const closeModal = ()=>{
+  clickedIndex.value=''
 }
-
+onClickOutside(showAllProjects,closeModal)
 
 </script>
+
 <template>
   <div v-show="!isLoading">
     <CalendarByMonth>
       <template #project="slotProps">
+        <div style="position: relative;">
           <div v-for="project in projects" :key="project.id">
-          <RouterLink :to="{ name: 'project', params: { id: project.id } }">
-            <div
-              :class="{ important: project.important }"
-              class="projects"
-              ref="projectRef"
-              :data-dateindex="slotProps.datesAndIndex.index"
-              v-if="showProjects(slotProps, project)"
-            >
+          <div
+            :class="{ important: project.important }"
+            class="projects"
+            ref="projectRef"
+            :data-dateindex="slotProps.datesAndIndex.index"
+            v-if="showProjects(slotProps, project)"
+          >
+            <RouterLink :to="{ name: 'project', params: { id: project.id } }">
               {{ project.projectName }}
-            </div>
-          </RouterLink>
+            </RouterLink>
+          </div>
+        </div>
+        <div class="showMoreProjects" ref="showAllProjects">
+          <div v-for="project in projects" :key="project.id">
+          <div  v-if="showProjects(slotProps, project)&&parseInt(clickedIndex)===slotProps.datesAndIndex.index ">
+            <RouterLink :to="{ name: 'project', params: { id: project.id } }">
+              {{ project.projectName }}
+            </RouterLink>
+          </div>
+          </div>
+        </div>
         </div>
       </template>
       <template #todayTasks>
@@ -153,8 +178,9 @@ const showPlus = ()=>{
   padding-left: 3px;
   margin-bottom: 3px;
 }
+
 .important {
-  background-color:pink;
+  background-color: pink;
   color: white;
 }
 .tasksContainer {
@@ -173,5 +199,12 @@ button {
 }
 .checkedItem {
   text-decoration: line-through;
+}
+.showMoreProjects{
+  position: absolute;
+  background-color: rgb(147, 147, 171);
+  top: 0;
+  width: 130px;
+  padding-left: 10px;
 }
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TasksTable from '@/components/TasksTable.vue'
-import { formatSubmitDate } from '@/stores/formatDates'
-import { fetchAllTasksByDate } from '@/stores/fetchData'
+import { formatSubmitDate } from '@/utils/dateUtils'
+import { fetchAllTasksByDate } from '@/services/fetchData'
 import { type DocumentData } from 'firebase/firestore'
 import { onMounted, ref, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -30,6 +30,6 @@ onMounted(() => {
 </script>
 <template>
   <div>
-    <TasksTable :projectFromParent="project" :tasksFromParent="tasks" />
+    <!-- <TasksTable :projectFromParent="project" :tasksFromParent="tasks" /> -->
   </div>
 </template>
