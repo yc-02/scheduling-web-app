@@ -1,5 +1,6 @@
 import { eachDayOfInterval, eachHourOfInterval, format } from 'date-fns'
 import type { DatesType } from 'env'
+import { getHourAndMinutes, timeToMinutes } from './dateUtils'
 //generate a timeline from 12:00 AM to 12:00 AM
 const timeline = eachHourOfInterval({
     start: new Date(2024, 10, 29, 0),
@@ -13,16 +14,7 @@ const formattedTimeline = timeline.map((item) => {
 
 
 
-const getHourAndMinutes = (time:string)=>{
-  const hours = time.split(':').map(Number)[0]
-  const minutes =time.split(':').map(Number)[1]
 
-  return {hours,minutes}
-}  
-const timeToMinutes=(time: string)=>{
-    const [hours, minutes] = time.split(':').map(Number)
-    return hours * 60 + minutes
-  }
 
 const  doTimesOverlap = ({
     start1,
@@ -98,18 +90,7 @@ const  doTimesOverlap = ({
   }
 
 
-  const getDatesInterval = ({startDate,endDate}:{startDate:string,endDate:string}) => {
-    const dates = eachDayOfInterval({
-      start: new Date(startDate),
-      end: new Date(endDate)
-    })
-    const datesVaule = dates.map((item) => {
-      return { formatDate: format(new Date(item), 'EEE, dd'), date: new Date(item) }
-    })
-  
-    return datesVaule
-  }
-  
+
 
   export{
     formattedTimeline,
@@ -117,6 +98,5 @@ const  doTimesOverlap = ({
     doTimesOverlap,
     getTasksPosition,
     generateColors,
-    getDatesInterval
   }
 

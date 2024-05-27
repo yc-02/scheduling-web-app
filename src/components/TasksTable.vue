@@ -3,14 +3,13 @@ import { nextTick, onMounted, ref, watch, type Ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { type CollectionReference, type DocumentData } from 'firebase/firestore'
 import type { DatesType, Project } from 'env'
-import { sortTasksByTime } from '@/services/fetchData'
-import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors, getDatesInterval } from '@/utils/taskTable'
-import { inputDefaultDate } from '@/utils/dateUtils'
+import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors } from '@/utils/taskTable'
+import { getDatesInterval, inputDefaultDate, sortTasksByTime } from '@/utils/dateUtils'
 import AddTasksForm from '@/components/AddTasksForm.vue'
 import { handleDeleteDoc } from '@/services/deleteData'
 const props = defineProps<{
   projectFromParent: DocumentData | undefined | Project
-  tasksFromParent: DocumentData[] | undefined
+  tasksFromParent: DocumentData[] | undefined 
   tasksRef: CollectionReference<DocumentData, DocumentData>
 }>()
 
@@ -164,7 +163,7 @@ watch(props, (newValue) => {
   tasksStyle()
   dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
   tableStyle()
-  sortTasksByTime({ tasks })
+  sortTasksByTime({ tasks:tasks.value??[] })
   showModal.value = tasks.value?.map(() => false)
   isLoading.value = false
 })
@@ -310,7 +309,7 @@ th {
   padding: 20px;
   border-radius: 20px;
   box-shadow: 1px 1px rgb(9, 9, 9, 0.1);
-  z-index: 3;
+  z-index: 1;
   top: 0;
   cursor: auto;
 }

@@ -1,9 +1,13 @@
 /* color palette from <https://github.com/vuejs/theme> */
 :root {
-  --primary-color:#88B2CC;
-  --primary-color-dark:#658EA9;
-  --primary-color-light:rgb(213, 213, 234);
-  --primary-color-extra-light:rgb(227, 227, 248);
+  --primary-color:#7DA1BF;
+  --primary-color-dark:#647C90;
+  --primary-color-light:#B0D2DA;
+  --primary-color-extra-light:#D9E4EC;
+  --important-color:#F8AFA6;
+  --important-color-dark:#d27f5f;
+  --secondary-color:#CAB29F;
+  --secondary-color-dark:#846750;
   --text-color-light:rgb(174, 174, 174);
   --border-color-soft:rgb(127, 127, 127);
   --border-color-light:rgb(211, 211, 211);

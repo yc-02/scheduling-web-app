@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { dateSlug,daysInWeek,renderMonth } from '@/utils/dateUtils';
-import { ref,computed } from 'vue'
+import { ref,computed} from 'vue'
 import { RouterLink } from 'vue-router';
 
 const today = new Date()
@@ -9,7 +9,8 @@ const thisYear = today.getFullYear()
 const thisMonth = today.getMonth()
 const year = ref(thisYear)
 const month = ref(thisMonth)
-
+//send month to parents
+const emit = defineEmits(['changeMonth'])
 //get next month calendar
 const nextMonth = () => {
   month.value++
@@ -17,6 +18,7 @@ const nextMonth = () => {
     month.value = 0
     year.value++
   }
+  emit('changeMonth',month.value)
 }
 // get last month
 const prevMonth = () =>{
@@ -25,12 +27,14 @@ const prevMonth = () =>{
     month.value=11
     year.value--
   }
+  emit('changeMonth',month.value)
 }
 
 //get today calendar
 const getToday = () =>{
   year.value = thisYear
   month.value = thisMonth
+  emit('changeMonth',month.value)
 }
 
 
@@ -90,17 +94,17 @@ function nextMonthDatesStype(index:number){
 <template>
     <div>
       <div class="titleContainer">
-      <p>{{ renderMonth(month) }} {{ year }}</p>
-      <button @click="prevMonth"><font-awesome-icon icon="fa-solid fa-chevron-left" /></button>
-      <button @click="getToday">Today</button>
-      <button @click="nextMonth"><font-awesome-icon icon="fa-solid fa-chevron-right" /></button>
+      <p class="calendarDate">{{ renderMonth(month) }} {{ year }}</p>
+      <button @click="prevMonth" class="calendarButton"><font-awesome-icon icon="fa-solid fa-chevron-left" /></button>
+      <button @click="getToday" class="calendarButton">Today</button>
+      <button @click="nextMonth" class="calendarButton"><font-awesome-icon icon="fa-solid fa-chevron-right" /></button>
       <!-- <button @click="year--">Last Year</button>
       <button @click="year++">Next Year</button> -->
     </div>
     <div class="calendarContainer">
       <div class="calendarLeft">
         <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(today)}`}}">
-          <p class="title">Today's tasks</p>
+          <p class="title">Today's Events</p>
         </RouterLink>
         <slot name="todayTasks"></slot>
       </div>
@@ -115,7 +119,7 @@ function nextMonthDatesStype(index:number){
           <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(dates)}`}}">
           <p class="dateItems" :class="{today:todayStyle(index)}">{{special}}</p>
           </RouterLink>
-          <slot name="project" :datesAndIndex={dates,index}></slot>
+          <slot name="project" :datesAndIndex={dates,index,month}></slot>
         </div>
       </div>
     </div>
@@ -130,12 +134,22 @@ function nextMonthDatesStype(index:number){
   padding: 10px;
   gap: 10px;
 }
+.dateItems:hover,.title:hover,.calendarButton:hover{
+  color: var(--primary-color);
+}
+.calendarButton,.calendarDate{
+  font-size: 16px;
+  font-weight: 600;
+}
+
 .calendarContainer{
   display: grid;
   grid-template-columns: 20% 80%;
 }
+
 .calendarLeft{
-  background-color: var(--primary-color-light);
+  background-color: var(--primary-color-extra-light);
+  border-radius: 5px;
 }
 .calendarLeft p{
   text-align: center;
@@ -144,21 +158,22 @@ function nextMonthDatesStype(index:number){
 .calendar{
   display: grid;
   grid-template-columns: repeat(7,1fr);
-  border-top:1px solid var(--border-color-soft);
+  gap: 3px;
+
   
 }
 .grid-dates{
   min-height: 130px;
-  border-bottom: 1px solid var(--border-color-soft);
-  border-right: 1px solid var(--border-color-soft);
+  background-color: whitesmoke;
+  border-radius: 5px;
 }
 
 
 .grid-days{
   padding: 10px;
   min-height: 30px;
-  border-right:1px solid var(--border-color-soft);
-  border-bottom: 1px solid var(--border-color-soft);
+  background-color: whitesmoke;
+  border-radius: 5px;
 }
 
 .pastDates, .nextMonthDates{
@@ -170,7 +185,7 @@ function nextMonthDatesStype(index:number){
   padding-top: 6px;
 }
 .today{
-  color: rgb(211, 139, 6)
+  color: var(--secondary-color-dark)
 }
 
 

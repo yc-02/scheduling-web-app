@@ -5,7 +5,7 @@ import {collection, doc, getDoc, getDocs, query, where, type DocumentData } from
 import type { Ref } from "vue"
 
 //get all projects collection
-async function fetchAllProjects({projects}:{projects:Ref<DocumentData[]>}) {
+async function fetchAllProjects({projects,isLoading}:{projects:Ref<DocumentData[]>,isLoading:Ref<boolean>}){
     try{
         const querySnapshot = await getDocs(projectsCollectionRef);
         projects.value = querySnapshot.docs.map(doc=>{
@@ -13,6 +13,8 @@ async function fetchAllProjects({projects}:{projects:Ref<DocumentData[]>}) {
     }
     )}catch(error){
         console.log(error)
+    }finally{
+        isLoading.value=false
     }
 
 }
@@ -32,7 +34,7 @@ async function fetchProjectById({project,id}:{project:Ref<DocumentData>,id:strin
 }
 
 //fetch all tasks (collection group)
-async function fetchTasks({tasks,isLoading}:{tasks:Ref<DocumentData[]>,isLoading:Ref<boolean>}) {
+async function fetchTasks({tasks}:{tasks:Ref<DocumentData[]>}){
     try{
         const querySnapshot = await getDocs(tasksCollectionRef)
         tasks.value = querySnapshot.docs.map(doc=>{
@@ -40,8 +42,6 @@ async function fetchTasks({tasks,isLoading}:{tasks:Ref<DocumentData[]>,isLoading
         })
     }catch(error){
         console.log(error)
-    }finally{
-        isLoading.value=false
     }
     
 }
@@ -80,32 +80,7 @@ async function fetchAllTasksByDate({tasks,date,isLoading}:{tasks:Ref<DocumentDat
 
 
 
- //sort by start time
-const formatTime = (time:string)=>{
-    return new Date(`May 24, 2024 ${time}`)
-}
-const sortTasksByTime = ({tasks}:{tasks:Ref<DocumentData[]|undefined>})=>{
-    tasks.value?.sort((a,b)=>{
-        const dateA = formatTime(a.startTime).getTime();
-        const dateB = formatTime(b.startTime).getTime();
-        return dateA - dateB
-        }); 
-}
 
-const sortProjectByStart = ({projects}:{projects:Project[]})=>{
-    projects.sort((a,b)=>{
-        const dateA = new Date(a.startDate);
-        const dateB = new Date(b.startDate);
-        if(isBefore(dateA,dateB)){
-            return -1
-        }else if(isBefore(dateB,dateA)){
-            return 1
-        }else{
-            return 0
-        }
-        
-    })
-}
 
 export {
     fetchAllProjects,
@@ -113,6 +88,4 @@ export {
     fetchAllTasksByDate,
     fetchTasksByProjectId,
     fetchTasks,
-    sortTasksByTime,
-    sortProjectByStart
 }
