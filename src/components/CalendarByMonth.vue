@@ -103,8 +103,8 @@ function nextMonthDatesStype(index:number){
     </div>
     <div class="calendarContainer">
       <div class="calendarLeft">
-        <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(today)}`}}">
-          <p class="title">Today's Events</p>
+        <RouterLink :to="{name:'activities',params:{slug:`${dateSlug(today)}`}}">
+          <p class="title">Today</p>
         </RouterLink>
         <slot name="todayTasks"></slot>
       </div>
@@ -112,14 +112,16 @@ function nextMonthDatesStype(index:number){
         <p v-for="day in daysInWeek" :key="day" class="grid-days">
           {{ day }}
         </p>
-          <div v-for="({dates,special},index) in calendarDates" class="grid-dates" 
+          <div v-for="({dates,special},index) in calendarDates" class="grid-dates"
           :key="index" 
           :class="{pastDates:index< getFirstDay,nextMonthDates:nextMonthDatesStype(index)}"
           >
-          <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(dates)}`}}">
-          <p class="dateItems" :class="{today:todayStyle(index)}">{{special}}</p>
-          </RouterLink>
-          <slot name="project" :datesAndIndex={dates,index,month}></slot>
+          <div>
+            <RouterLink :to="{name:'activities',params:{slug:`${dateSlug(dates)}`}}">
+            <p class="dateItems" :class="{today:todayStyle(index)}">{{special}}</p>
+            </RouterLink>
+            <slot name="project" :datesAndIndex={dates,index,month}></slot>
+          </div>
         </div>
       </div>
     </div>
@@ -141,6 +143,10 @@ function nextMonthDatesStype(index:number){
   font-size: 16px;
   font-weight: 600;
 }
+.dateItems{
+  display: inline-flex;
+  padding-right: 6px;
+}
 
 .calendarContainer{
   display: grid;
@@ -151,7 +157,7 @@ function nextMonthDatesStype(index:number){
   background-color: var(--primary-color-extra-light);
   border-radius: 5px;
 }
-.calendarLeft p{
+.title{
   text-align: center;
   margin: 6px;
 }

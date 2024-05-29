@@ -2,12 +2,9 @@
 import { db } from '@/firebase'
 import { collection } from 'firebase/firestore'
 import { useRoute } from 'vue-router'
-import { useCollection } from 'vuefire'
 import TasksTable from '@/components/TasksTable.vue'
 import { fetchProjectById, fetchTasksByProjectId } from '@/services/fetchData'
 import { ref, type Ref } from 'vue'
-import AddTasksForm from '@/components/AddTasksForm.vue'
-import { inputDefaultDate } from '@/utils/dateUtils'
 import type { Task } from 'env'
 
 const route = useRoute()

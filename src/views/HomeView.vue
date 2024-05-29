@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, type Ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch, type Ref } from 'vue';
 import HomeCalendar from '@/components/HomeCalendar.vue';
-import HomeList from '@/components/HomeList.vue';
 import { useNow } from '@vueuse/core';
-import { fetchAllProjects, fetchTasks } from '@/services/fetchData';
-import type { Project, Task } from 'env';
+import { fetchAllProjects } from '@/services/fetchData';
+import type { Project } from 'env';
+import { sortProjectByStart } from '@/utils/dateUtils';
 //now time
 const now = useNow()
-//get all tasks and projects
-const tasks: Ref<Task[]> = ref([])
+//get all projects
 const projects: Ref<Project[]> = ref([])
 const isLoading= ref(true)
-fetchTasks({ tasks })
 fetchAllProjects({ projects,isLoading })
 //greeting
 const greet = ref('Ying')
@@ -36,28 +34,23 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateScreenWidth);
 });
 
-
+watch(projects,()=>{
+    sortProjectByStart({ projects: projects.value })
+})
 </script>
 
 <template>
-  <main>
-    <div>
-    Hello, {{ greet }}
+  <div class="container">
+    <div class="titleContainer">
     </div>
-    <p>{{ now }}</p>
     <div v-if="isLoading">
       Loading...
     </div>
-    <div v-show="!isLoading">
-    <button @click="toggleView" v-show="screenWidth>1000">{{listView?'Calendar View':'List View'}}</button>
-    <div v-show="listView||screenWidth<1000">
-      <HomeList :tasks="tasks" :projects="projects"/>
-    </div>
-    <div v-show="!listView||screenWidth>1000">
+    <div v-show="!isLoading" class="homeComponent">
       <HomeCalendar :projects="projects"/>
     </div>
-    </div>
-  </main>
+
+  </div>
 </template>
 <style scoped>
 @media screen and (max-width:900px) {
@@ -65,4 +58,25 @@ onUnmounted(() => {
 
   
 }
+.titleContainer{
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.link{
+  display: inline-flex;
+  background-color: var(--primary-color);
+  padding: 6px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  
+}
+.container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+
 </style>

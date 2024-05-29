@@ -1,6 +1,5 @@
 import { db, projectsCollectionRef, tasksCollectionRef } from "@/firebase"
-import { isBefore } from "date-fns";
-import type { Project } from "env";
+import type { Task } from "env";
 import {collection, doc, getDoc, getDocs, query, where, type DocumentData } from "firebase/firestore"
 import type { Ref } from "vue"
 

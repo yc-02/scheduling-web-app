@@ -22,19 +22,25 @@ const router = createRouter({
       path:'/projects',
       name:'projects',
       meta:{title:'Projects'},
-      component:()=>import('../views/ProjectsView.vue')
+      component:()=>import('../views/ProjectsListView.vue')
     },
     {
       path:'/projects/:id',
       name:'project',
       meta:{title:'Project'},
-      component:()=>import('../views/ProjectDetailsView.vue')
+      component:()=>import('@/views/ProjectDetailsView.vue')
     },
     {
-      path:'/tasks/:slug',
-      name:'tasks',
-      meta:{title:'Task'},
-      component:()=>import('../views/TasksView.vue')
+      path:'/events/:id',
+      name:'events',
+      meta:{title:'events'},
+      component:()=>import('@/views/ProjectDetailsView.vue')
+    },
+    {
+      path:'/activities/:slug',
+      name:'activities',
+      meta:{title:'Activities'},
+      component:()=>import('@/views/ActivitiesView.vue')
     }
   ]
 })

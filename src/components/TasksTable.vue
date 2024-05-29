@@ -70,9 +70,10 @@ const tableStyle = () => {
 
 const tasksStyle = () => {
   const count: any = {}
-  const samedayDiv: HTMLElement[] = []
+  const samedayDiv: { [key: string]: HTMLElement[] } = {}
   nextTick(() => {
     if (projectRef.value) {
+      //count sameday 
       for (let i = 0; i < projectRef.value.length; i++) {
         const task: HTMLElement = projectRef.value[i]
         const taskDate = task.dataset.date ?? ''
@@ -96,37 +97,55 @@ const tasksStyle = () => {
           count[taskDate] = 1
         }
       }
-
+      //get sameday div
       for (let i = 0; i < projectRef.value.length; i++) {
-        const task = projectRef.value[i]
-        const taskDate = task.dataset.date
+        const task:HTMLElement = projectRef.value[i]
+        const taskDate:string|undefined = task.dataset.date
         if (taskDate && count[taskDate] > 1) {
-          samedayDiv.push(task)
+          samedayDiv[taskDate] = samedayDiv[taskDate] || []
+          samedayDiv[taskDate].push(task)
+      }
         }
       }
 
-      const overlaps = []
-      for (let i = 0; i < samedayDiv.length; i++) {
-        for (let j = i + 1; j < samedayDiv.length; j++) {
-          const start1: string = samedayDiv[i].dataset.start ?? ''
-          const end1: string = samedayDiv[i].dataset.end ?? ''
-          const start2: string = samedayDiv[j].dataset.start ?? ''
-          const end2: string = samedayDiv[j].dataset.end ?? ''
-          if (doTimesOverlap({ start1, end1, start2, end2 })) {
-            overlaps.push({ div: samedayDiv[i] }, { div: samedayDiv[j] })
+      //sameday overlaps
+      const samedayArray = Object.values(samedayDiv);
+      const overlaps:{[key:string]:HTMLElement[]} = {}
+      for(let i=0;i<samedayArray.length;i++){
+        const samedaySubArray:HTMLElement[] = samedayArray[i]
+        for(let a=0;a<samedaySubArray.length;a++){
+          const taskDate:string|undefined = samedaySubArray[a].dataset.date
+          for(let b=a+1; b<samedaySubArray.length;b++){
+            const start1: string = samedaySubArray[a].dataset.start ?? ''
+            const end1: string = samedaySubArray[a].dataset.end ?? ''
+            const start2: string = samedaySubArray[b].dataset.start ?? ''
+            const end2: string =samedaySubArray[b].dataset.end ?? ''
+            if (doTimesOverlap({ start1, end1, start2, end2 })) {
+              if(taskDate){
+                overlaps[taskDate]=overlaps[taskDate]||[]
+                overlaps[taskDate].push(samedaySubArray[a],samedaySubArray[b])
+              }
+            }
+          }
+        }
+
+      //overlap time get unique div  
+      const overlapsArray = Object.values(overlaps);
+      const colorMap = generateColors(overlapsArray.length)
+      for(let i=0;i<overlapsArray.length;i++){
+        const divArray:HTMLElement[]= overlapsArray[i]
+        const uniqueDiv = [...new Set(divArray)]
+        const newWidth = tableDataWidth.value / uniqueDiv.length
+          for(let i=0;i<uniqueDiv.length;i++){
+          uniqueDiv[i].style.width=`${newWidth}px`
+          uniqueDiv[i].style.left=`${parseInt(uniqueDiv[0].style.left)+i*newWidth}px`
+          const child: HTMLElement | null = uniqueDiv[i].querySelector('.tasksItems')
+          if (child) {
+            child.style.backgroundColor = colorMap[i]
           }
         }
       }
-      const colorMap = generateColors(overlaps.length)
-      for (let i = 0; i < overlaps.length; i++) {
-        const newWidth = tableDataWidth.value / overlaps.length
-        overlaps[i].div.style.width = `${newWidth}px`
-        overlaps[i].div.style.left = `${parseInt(samedayDiv[0].style.left) + i * newWidth}px`
-        const child: HTMLElement | null = samedayDiv[i].querySelector('.tasksItems')
-        if (child) {
-          child.style.backgroundColor = colorMap[i]
-        }
-      }
+
     }
   })
 }
@@ -160,9 +179,9 @@ onMounted(() => {
 watch(props, (newValue) => {
   tasks.value = newValue.tasksFromParent
   project.value = newValue.projectFromParent
-  tasksStyle()
   dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
   tableStyle()
+  tasksStyle()
   sortTasksByTime({ tasks:tasks.value??[] })
   showModal.value = tasks.value?.map(() => false)
   isLoading.value = false
@@ -221,6 +240,7 @@ onClickOutside(addForm, handleClickOutside)
             ref="modalTarget"
             v-if="showModal && showModal[i] && task.id !== 'newItem'"
           >
+          {{ task.taskDate }}
             <p>{{ task.taskName }}</p>
             <p>{{ task.startTime }}-{{ task.endTime }}</p>
             <p>{{ task.details }}</p>
@@ -245,14 +265,14 @@ onClickOutside(addForm, handleClickOutside)
           ></td>
         </tr>
       </table>
-      <div v-if="showForm" ref="addForm" class="addForm">
+      <!-- <div v-if="showForm" ref="addForm" class="addForm">
         <AddTasksForm
           :tasksRef="tasksRef"
           :minDate="inputDefaultDate(project?.startDate)"
           :maxDate="inputDefaultDate(project?.endDate)"
           :clicked="clicked"
         />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

@@ -32,7 +32,7 @@ const  doTimesOverlap = ({
     const startMinutes2 = timeToMinutes(start2)
     const endMinutes2 = timeToMinutes(end2)
   
-    return startMinutes1 < endMinutes2 && startMinutes2 < endMinutes1
+    return startMinutes1 <= endMinutes2 && startMinutes2 <= endMinutes1
   }
 
  

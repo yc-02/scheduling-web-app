@@ -1,4 +1,4 @@
-import { eachDayOfInterval, format, isBefore } from "date-fns";
+import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
 import type { Project, Task } from "env";
 import type { DocumentData } from "firebase/firestore";
 
@@ -79,15 +79,25 @@ const sortTasksByTime = ({tasks}:{tasks:Task[]|DocumentData[]})=>{
 
 const sortProjectByStart = ({projects}:{projects:Project[]})=>{
   projects.sort((a,b)=>{
-      const dateA = new Date(a.startDate);
-      const dateB = new Date(b.startDate);
-      if(isBefore(dateA,dateB)){
+      const startA = new Date(a.startDate);
+      const startB = new Date(b.startDate);
+      const endA = new Date(a.endDate);
+      const endB = new Date(b.endDate);
+
+      if(isBefore(startA,startB)){
           return -1
-      }else if(isBefore(dateB,dateA)){
+      }else if(isAfter(startA,startB)){
           return 1
       }else{
-          return 0
+          if(isBefore(endA,endB)){
+            return -1
+          }else if(isAfter(endA,endB)){
+            return 1
+          }else{
+            return 0
+          }
       }
+      
       
   })
 }
@@ -121,6 +131,19 @@ const getFormattedDatesInterval = ({project}:{project:Project}) => {
 }
 
 
+//sort tasks by time
+
+const tasksSorted = (tasks:Task[])=>{
+  tasks.sort((a,b)=>{
+    const startComparison = a.startTime.localeCompare(b.startTime)
+    if(startComparison!==0){
+      return startComparison
+    }
+    return a.endTime.localeCompare(b.endTime)
+  })
+
+}
+
 export {
     getUTCDate,
     inputDefaultDate,
@@ -134,5 +157,6 @@ export {
     timeToMinutes,
     toTimeString,
     getDatesInterval,
-    getFormattedDatesInterval
+    getFormattedDatesInterval,
+    tasksSorted
 }

@@ -2,13 +2,13 @@
 import { isAfter, isBefore, isEqual } from 'date-fns';
 import CalendarByMonth from './CalendarByMonth.vue';
 import { nextTick, ref, watch, type Ref } from 'vue';
-import { doc, updateDoc, type DocumentData } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { type DocumentData } from 'firebase/firestore';
 import { fetchAllTasksByDate } from '@/services/fetchData';
 import type { Project, Task } from 'env';
-import { formatSubmitDate, sortProjectByStart, sortTasksByTime } from '@/utils/dateUtils';
+import { formatSubmitDate, sortTasksByTime } from '@/utils/dateUtils';
 import { onClickOutside } from '@vueuse/core';
 import MyCheckbox from './MyCheckbox.vue';
+import AddTasksForm from './AddTasksForm.vue';
 
 const props = defineProps<{
   projects:Project[]
@@ -91,23 +91,6 @@ watch(()=>monthIndex.value,()=>{
 // today's tasks checked
 const checked: Ref<boolean[]> = ref(todayTasks.value.map((task) => task.checked))
 
-const handleCheckChange = async (index: number) => {
-  const path = todayTasks.value[index].path
-  const isChecked = !checked.value[index]
-  checked.value[index] = !checked.value[index]
-  if (path) {
-    const taskRef = doc(db, path)
-    await updateDoc(taskRef, {
-      checked: isChecked
-    })
-      .then(() => {
-        console.log('checked')
-      })
-      .catch((error) => {
-        console.log(error)
-      })
-  }
-}
 
 watch(todayTasks, () => {
   sortTasksByTime({ tasks: todayTasks.value })
@@ -115,7 +98,6 @@ watch(todayTasks, () => {
 })
 
 watch(()=>props.projects, () => {
-  sortProjectByStart({ projects: props.projects })
   showMoreProjects()
 })
 const clickedIndex = ref()
@@ -125,12 +107,32 @@ const closeModal = ()=>{
 }
 onClickOutside(showAllProjects,closeModal)
 
+
+
 const todayEventsProject = (taskPath:string|undefined)=>{
   const getProject = props.projects.filter(p=>
     taskPath?.includes(p.path)
   )
   return getProject[0].projectName
 }
+const existEvents=ref()
+const clicked:Ref<{date:string,id:string,time:string}> = ref({date:'',id:'',time:''})
+const showAddForm = ref(false)
+const addForm =ref(null)
+onClickOutside(addForm,()=>{
+  showAddForm.value=false
+  clicked.value={date:'',id:'',time:''}
+})
+
+
+watch(clicked,()=>{
+  const exist = props.projects.filter(a=>a.id===clicked.value.id)
+  exist.length>0? existEvents.value = true: existEvents.value = false
+})
+
+
+
+
 </script>
 
 <template>
@@ -143,46 +145,66 @@ const todayEventsProject = (taskPath:string|undefined)=>{
             ref="projectRef"
             :data-dateindex="slotProps.datesAndIndex.index"
             :data-monthindex="slotProps.datesAndIndex.month"
-            v-if="showProjects(slotProps, project)"
+            v-if="showProjects(slotProps, project)&&!project.events"
           >
             <RouterLink :to="{ name: 'project', params: { id: project.id } }">
               <div 
-              :class="{ important: project.important}" class="projects">
-                <p class="projectTitle">{{ project.projectName }}</p>
+              :class="{ important: project.important, projects:!project.events}">
+                <p class="projectTitle">P:{{ project.projectName }}</p>
               </div>
             </RouterLink>
+          </div>
+          <div v-for="event,index in project.events" :key="index">
+            <div 
+            ref="projectRef" 
+            :data-dateindex="slotProps.datesAndIndex.index"
+            :data-monthindex="slotProps.datesAndIndex.month" 
+            v-if="showProjects(slotProps, project)">
+            <RouterLink :to="{name:'events',params:{id:project.id}}">
+              <div class="events">
+                <p ref="calendarItems"> {{ event }}</p>
+              </div>
+            </RouterLink>
+            </div>
           </div>
         </div>
         <div class="moreProjectsContainer" ref="showAllProjects" v-if="parseInt(clickedIndex)===slotProps.datesAndIndex.index">
           <div v-for="project in projects" :key="project.id">
-          <RouterLink :to="{ name: 'project', params: { id: project.id } }">
-            <div  v-if="showProjects(slotProps, project)" class="projects" :class="{ important: project.important}" style="width: 150px">
-              <p class="projectTitle">{{ project.projectName }}</p>
+            <div  v-if="showProjects(slotProps, project)" :class="{ important: project.important, projects:!project.events}" style="width: 150px">
+              <RouterLink :to="{ name: 'project', params: { id: project.id } }">
+              <p class="projectTitle" v-if="!project.events">{{ project.projectName }}</p>
+             </RouterLink>
+              <div v-for="event,index in project.events" :key="index">
+                  <div ref="projectRef">E:{{ event }}</div>
+              </div>
             </div>
-          </RouterLink>
           </div>
         </div>
         </div>
       </template>
       <template #todayTasks>
-        <div v-for="(task, index) in todayTasks" :key="index">
-          <div class="tasksContainer">
+        <div v-for="(task, index) in todayTasks" :key="index" class="tasksContainer">
             <RouterLink :to="{name:'project',params:{id:task.path?.split('/')[1]}}">
               <p class="subTitle">{{ todayEventsProject(task.path) }}</p>
             </RouterLink>
-            <div class="tasksItems">
-              <MyCheckbox :checked="checked[index]" :handle-check="()=>handleCheckChange(index)"/>
-              <p :class="{ checkedItem: checked[index]}">{{ task.taskName }}</p>
-            </div>
-          </div>
+            <MyCheckbox :path="task.path" :index="index" :checked="checked" :title="task.taskName" @is-checked="(isChecked)=>checked[index]=isChecked"/>
         </div>
       </template>
     </CalendarByMonth>
+    <div class="addForm" v-if="showAddForm" ref="addForm">
+      <p>Add Event</p>
+      <AddTasksForm :clicked="clicked" :projects="projects" :exist="existEvents"/>
+    </div>
   </div>
 </template>
 <style scoped>
 .projects {
   background-color: var(--primary-color-extra-light);
+  padding-left: 3px;
+  margin-bottom: 3px;
+}
+.events{
+  background-color: var(--secondary-color);
   padding-left: 3px;
   margin-bottom: 3px;
 }
@@ -194,19 +216,14 @@ const todayEventsProject = (taskPath:string|undefined)=>{
   color: white;
 }
 .important:hover{
-  background-color: var(--important-color-dark);
+  background-color: var(--important-color-light);
 }
 .tasksContainer {
   display: flex;
   flex-direction: column;
-  padding-left: 19px;
+  margin-left: 19px;
 }
-.tasksItems{
-  display: flex;
-  gap: 9px; 
-  align-items: center;
-  margin-left: 13px;
-}
+
 
 .checkedItem {
   text-decoration: line-through;
@@ -214,8 +231,7 @@ const todayEventsProject = (taskPath:string|undefined)=>{
 .moreProjectsContainer{
   position: absolute;
   background-color:whitesmoke;
-  top: -10px;
-  left: 120px;
+  top: 0;
   width: 170px;
   box-shadow: 2px 2px 3px rgba(53, 53, 53, 0.2);
   z-index: 1;
@@ -240,6 +256,21 @@ const todayEventsProject = (taskPath:string|undefined)=>{
 }
 .subTitle:hover{
   color: var(--primary-color);
+}
+.addForm{
+  background-color: var(--primary-color-extra-light);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  top: 20%;
+  left: 45%;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 3px 3px 6px 1px rgb(217,228,236,0.5);
+}
+.eventsContainer{
+
 }
 
 </style>

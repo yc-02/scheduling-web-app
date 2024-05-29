@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { projectsCollectionRef } from '@/firebase';
-import { formatSubmitDate, inputDefaultDate } from '@/stores/formatDates';
+import { formatSubmitDate, inputDefaultDate } from '@/utils/dateUtils';
 import { addDoc} from 'firebase/firestore';
 import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -14,7 +14,6 @@ const important = ref(false)
 
 
 const route = useRouter()
-
 const handleSubmit=async()=>{
     const newProject = {
         projectName:projectName.value,

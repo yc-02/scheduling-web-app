@@ -9,6 +9,10 @@ import NavbarWeb from './components/NavbarWeb.vue';
     <header>
       <NavbarWeb/>
     </header>
-    <RouterView/>
+    <main>
+      <RouterView/>
+    </main>
 </template>
 
+<style>
+</style>
