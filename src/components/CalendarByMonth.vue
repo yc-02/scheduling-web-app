@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { dateSlug, daysInWeek, formatSubmitDate, inputDefaultDate, renderMonth } from '@/utils/dateUtils'
+import { dateSlug, daysInWeek, getDateWithoutTime, renderMonth } from '@/utils/dateUtils'
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
@@ -37,7 +37,7 @@ const getToday = () => {
   year.value = thisYear
   month.value = thisMonth
   emit('changeMonth', month.value)
-  emit('clickedDate',new Date(formatSubmitDate(today.toString())))
+  emit('clickedDate',getDateWithoutTime(today))
 }
 
 //get first Day of the month

@@ -7,8 +7,8 @@ import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const projectName:Ref<string> = ref('')
-const startDate:Ref<string> = ref(inputDefaultDate(new Date().toString()))
-const endDate:Ref<string>=ref(inputDefaultDate(new Date().toString()))
+const startDate:Ref<string> = ref(inputDefaultDate(new Date()))
+const endDate:Ref<string>=ref(inputDefaultDate(new Date()))
 const important = ref(false)
 const errorMessage=ref()
 

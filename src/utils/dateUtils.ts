@@ -1,16 +1,33 @@
-import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
+import { eachDayOfInterval, format, getDate, isAfter, isBefore } from "date-fns";
 import type { Project, Task } from "env";
 import type { DocumentData } from "firebase/firestore";
 
+const getDateWithoutTime=(date:Date)=>{
+  const newDate = new Date(new Date(new Date(date).getFullYear(),new Date(date).getMonth(),new Date(date).getDate()))
+  return newDate
 
-const inputDefaultDate = (date:string)=>{
-  return format(date,'yyyy-MM-dd')
 }
 
-const formatSubmitDate = (date:string)=>{
-    return format(date,'MMM dd, yyyy')
-    
+const formatDate =(date:Date)=>{
+  return format(getDateWithoutTime(date),'MMM dd, yyyy')
 }
+
+const inputDefaultDate = (date:string|Date)=>{
+  return format(new Date(date),'yyyy-MM-dd')
+}
+
+// for input date with hyphen
+const getUTCDate = (date:string|Date)=>{
+  const utcDate = new Date(new Date(date).getUTCFullYear(), new Date(date).getUTCMonth(), new Date(date).getUTCDate());
+  return utcDate
+
+}
+const formatSubmitDate = (dateWithHyphen:string)=>{
+  return format(getUTCDate(dateWithHyphen),'MMM dd, yyyy')
+  
+}
+ 
+
 const dateSlug = (date:Date)=>{
     return date.toJSON().split('T')[0]
   }
@@ -150,5 +167,7 @@ export {
     toTimeString,
     getDatesInterval,
     getFormattedDatesInterval,
-    compareTime
+    compareTime,
+    getDateWithoutTime,
+    formatDate
 }

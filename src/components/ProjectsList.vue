@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { formatSubmitDate, getDatesInterval, inputDefaultDate, toTimeString } from '@/utils/dateUtils';
+import { getDateWithoutTime, getDatesInterval, inputDefaultDate, toTimeString } from '@/utils/dateUtils';
 import type { Project, Task } from 'env'
 import { ref, watch, type Ref } from 'vue';
 import MyCheckbox from './MyCheckbox.vue';
 import { RouterLink } from 'vue-router';
-import { format, isAfter, isBefore, isEqual } from 'date-fns';
+import { isAfter, isBefore, isEqual } from 'date-fns';
 import AddTasksForm from './AddTasksForm.vue';
 
 
@@ -27,9 +27,9 @@ watch(props,()=>{
 const showPast=ref(false)
 const isCurrentOrPast = (project:Project)=>{
   if(showPast.value===true){
-    return isBefore(new Date(project.endDate),formatSubmitDate(new Date().toString()))
+    return isBefore(new Date(project.endDate),getDateWithoutTime(new Date()))
   }else{
-    return isAfter(new Date(project.endDate),formatSubmitDate(new Date().toString()))||isEqual(formatSubmitDate(new Date().toString()),new Date(project.endDate))
+    return isAfter(new Date(project.endDate),getDateWithoutTime(new Date()))||isEqual(getDateWithoutTime(new Date()),new Date(project.endDate))
   }
 }
 
@@ -43,7 +43,7 @@ const handleClick = (date:Date,projectId:string)=>{
   }else{
     event='task'
   }
-  clicked.value={date:inputDefaultDate(date.toString()),time:'',id:projectId,eventOrTask:event}
+  clicked.value={date:inputDefaultDate(date),time:'',id:projectId,eventOrTask:event}
   showForm.value=true
 }
 const showTask = (task:Task,projectId:string,date:Date)=>{

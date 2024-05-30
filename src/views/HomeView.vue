@@ -41,7 +41,7 @@ const pFormRef = ref(null)
 const eFormRef = ref(null)
 
 //send to event form
-const today = inputDefaultDate(new Date().toString())
+const today = inputDefaultDate(new Date())
 const clicked = { date: today, isEvent: true }
 
 const handleClickEForm = () => {

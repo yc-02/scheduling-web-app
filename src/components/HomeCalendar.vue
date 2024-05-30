@@ -6,7 +6,8 @@ import { type DocumentData } from 'firebase/firestore'
 import { fetchAllTasksByDate, fetchTasks } from '@/services/fetchData'
 import type { Project, Task } from 'env'
 import {
-  formatSubmitDate,
+  formatDate,
+  getDateWithoutTime,
   getDatesInterval,
   sortTasksByTime,
   toTimeString
@@ -15,7 +16,6 @@ import { onClickOutside } from '@vueuse/core'
 import MyCheckbox from './MyCheckbox.vue'
 import AddTasksForm from './AddTasksForm.vue'
 import CalendarLeft from './CalendarLeft.vue'
-import { cp } from 'fs'
 
 const props = defineProps<{
   projects: Project[]
@@ -24,7 +24,7 @@ const props = defineProps<{
 
 const todayTasks: Ref<Task[]> = ref([])
 //get data from firebase
-const today = formatSubmitDate(new Date().toDateString())
+const today = formatDate(new Date())
 fetchAllTasksByDate({ tasks: todayTasks, date: today })
 
 const showProjects = (
@@ -236,7 +236,7 @@ const combinedDates: ComputedRef<string[]> = computed(() => {
   return Array.from(uniqueArray)
 })
 
-const clickedDate: Ref<Date> = ref(new Date(formatSubmitDate(new Date().toString())))
+const clickedDate: Ref<Date> = ref(getDateWithoutTime(new Date()))
 const showSmScreenProjects = (project: Project, clicked: Date) => {
   return getDatesInterval({ startDate: project.startDate, endDate: project.endDate }).map(
     (a) => a.date.toString() == clicked.toString()
@@ -284,7 +284,6 @@ const slice=computed(()=>{
 
 <template>
   <div>
-    {{ clickedDate }}
     <!-- <CalendarLeft>
       <template #todayTasks>
         <div v-for="(task, index) in todayTasks" :key="index" class="tasksContainer">
