@@ -31,12 +31,6 @@ const router = createRouter({
       component:()=>import('@/views/ProjectDetailsView.vue')
     },
     {
-      path:'/events/:id',
-      name:'events',
-      meta:{title:'events'},
-      component:()=>import('@/views/ProjectDetailsView.vue')
-    },
-    {
       path:'/activities/:slug',
       name:'activities',
       meta:{title:'Activities'},

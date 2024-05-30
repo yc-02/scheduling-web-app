@@ -6,6 +6,7 @@ import { type DocumentData } from 'firebase/firestore'
 import { fetchAllTasksByDate, fetchTasks } from '@/services/fetchData'
 import type { Project, Task } from 'env'
 import {
+  dateSlug,
   formatDate,
   getDateWithoutTime,
   getDatesInterval,
@@ -16,6 +17,7 @@ import { onClickOutside } from '@vueuse/core'
 import MyCheckbox from './MyCheckbox.vue'
 import AddTasksForm from './AddTasksForm.vue'
 import CalendarLeft from './CalendarLeft.vue'
+
 
 const props = defineProps<{
   projects: Project[]
@@ -283,7 +285,7 @@ const slice=computed(()=>{
 </script>
 
 <template>
-  <div>
+  <div style="width: 100%;">
     <!-- <CalendarLeft>
       <template #todayTasks>
         <div v-for="(task, index) in todayTasks" :key="index" class="tasksContainer">
@@ -294,18 +296,12 @@ const slice=computed(()=>{
         </div>
       </template>
     </CalendarLeft> -->
-    <CalendarByMonth
+    <CalendarByMonth :dates-with-items="combinedDates"
       @change-month="(month) => (monthIndex = month)"
       @clicked-date="(date) => (clickedDate = date)"
     >
       <template #project="slotProps">
         <div class="container">
-          <!-- show on small screen -->
-          <div v-for="date in combinedDates" :key="date" class="smContainer">
-            <div v-if="slotProps.datesAndIndex.dates.toString() === date" class="dotContainer">
-              <font-awesome-icon icon="fa-solid fa-circle" size="xs" style="color: lightgray" />
-            </div>
-          </div>
           <!-- show project and events total under 3 -->
           <div v-for="project in projects" :key="project.id" class="projectsContainer">
             <div
@@ -493,12 +489,16 @@ const slice=computed(()=>{
       </template>
     </CalendarByMonth>
     <!-- projects and tasks view on small screen -->
-    <div v-for="project in projects" :key="project.id" class="smItems">
+    <div class="smItems">
+      <p>{{ formatDate(clickedDate) }}</p>
+      <div v-for="project in projects" :key="project.id">
       <div
         v-if="!project.events && showSmScreenProjects(project, clickedDate).includes(true)"
         class="sProjectsContainer"
       >
-        <p class="projectTitle">{{ project.projectName }}</p>
+        <RouterLink :to="{name:'project',params:{id:project.id}}">
+          <p class="projectTitle">P: {{ project.projectName }}</p>
+        </RouterLink>
         <div>
           <p class="sDate">{{ project.startDate }}</p>
           <p class="sDate">{{ project.endDate }}</p>
@@ -514,7 +514,9 @@ const slice=computed(()=>{
             class="sEventsContainer"
           >
             <div class="sEvents">
-              <p class="eventTitle">{{ event }}</p>
+              <RouterLink :to="{name:'activities', params: { slug: `${dateSlug(new Date(task.taskDate))}` }}">
+                <p class="eventTitle">{{ event }}</p>
+              </RouterLink>
               <em>{{ task.details }}</em>
             </div>
             <div class="sEvents">
@@ -525,6 +527,8 @@ const slice=computed(()=>{
         </div>
       </div>
     </div>
+    </div>
+
     <!-- <div class="addForm" v-if="showAddForm" ref="addForm">
       <p>Add Event</p>
       <AddTasksForm :clicked="clicked" :projects="projects"/>
@@ -653,10 +657,7 @@ const slice=computed(()=>{
   .moreProjectsContainer {
     display: none;
   }
-  .dotContainer {
-    display: flex;
-    justify-content: center;
-  }
+
   .sProjectsContainer,
   .sEventsContainer {
     display: flex;
@@ -674,7 +675,7 @@ const slice=computed(()=>{
     color: var(--text-color-soft);
   }
   .smItems {
-    margin-top: 10px;
+    padding: 10px;
     font-size: 14px;
   }
 }

@@ -45,8 +45,8 @@ const tableRowStyle = () => {
 const myTable: Ref<HTMLElement | null> = ref(null)
 const projectRef: Ref<HTMLElement[] | null> = ref([])
 const tableDataWidth = ref(0)
-const tableDataIndexWidth = ref(60)
-const tableWidth = ref(1400)
+const tableWidth = ref(1000)
+const indexItemWidth=ref(60)
 
 
 
@@ -57,15 +57,18 @@ const tableWidth = ref(1400)
 const tableStyle = () => {
   const table: HTMLElement | null = myTable.value
   nextTick(() => {
-    const tableData = document.getElementsByTagName('td')
+    const tableData: HTMLCollectionOf<HTMLTableCellElement> = document.getElementsByTagName('td')
     if (table !== null) {
-      tableDataIndexWidth.value = 60
-      tableData[0].style.width = `60px`
       table.style.width = `${tableWidth.value}px`
-      for (let i = 1; i <= dates.value.length; i++) {
+      console.log(myTable.value?.style.width,'mytable width')
+      console.log(tableData)
+      for (let i = 0; i <= dates.value.length; i++) {
+      if(tableData[i]!==undefined){
         tableData[i].style.width = `${tableWidth.value / dates.value.length}px`
-      }
-      tableDataWidth.value = (tableWidth.value - tableDataIndexWidth.value) / dates.value.length
+      };
+    };
+      tableDataWidth.value = tableWidth.value / dates.value.length
+      console.log(tableDataWidth.value,'what')
     }
   })
 }
@@ -88,7 +91,6 @@ const tasksStyle = () => {
           startTime,
           endTime,
           tableDataWidth: tableDataWidth.value,
-          tableDataIndexWidth: tableDataIndexWidth.value,
           dates: dates.value
         })
         projectRef.value[i].style.top = position.top
@@ -204,9 +206,9 @@ watch(nowMinutes,()=>{
 //watch data change
 watch(props, () => {
   if(props.screenWidth && props.screenWidth<1000){
-    tableWidth.value = props.parentWidth*dates.value.length
+    tableWidth.value = (props.parentWidth-50)*dates.value.length
   }else {
-    tableWidth.value = props.parentWidth
+    tableWidth.value = props.parentWidth-50
   }
   tasks.value = props.tasksFromParent
   project.value = props.projectFromParent
@@ -249,7 +251,6 @@ onClickOutside(addForm, handleClickOutside)
 </script>
 
 <template>
-  <div class="container">
     <div class="headerContainer">
       <p class="title">{{ project?.projectName }}</p>
       <div v-if="dates && dates.length > 1">{{ project?.startDate }} - {{ project?.endDate }}</div>
@@ -257,14 +258,19 @@ onClickOutside(addForm, handleClickOutside)
         {{ project?.startDate }}
       </div>
     </div>
-    <div class="tableContainer">
+    <div style="display: flex;">
       <div class="tableIndex" style="margin-top: 30px;">
-        <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" class="tableRows" style="display: flex; justify-content: center;" >
-            <p class="indexItem" style="height: 30px; align-items: center; display: flex;">{{ time }}</p>
-        </div>
-        <div class="tableRows"></div>
+          <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" 
+          class="tableRows" 
+          style="display: flex; 
+          justify-content: center;" >
+              <p class="indexItem">{{ time }}</p>
+          </div>
+          <div class="tableRows indexItem"></div>
       </div>
-      <table style="position: relative" ref="myTable">
+      <div class="tableContainer">
+      <div>
+        <table style="position: relative;" ref="myTable">
         <!-- abosolute position tasks -->
         <div
           v-for="(task, i) in tasks"
@@ -297,15 +303,11 @@ onClickOutside(addForm, handleClickOutside)
           </div>
         </div>
         <tr>
-          <th></th>
           <th v-for="date in dates" :key="date.formatDate" class="tableHeader">
             {{ date.formatDate }}
           </th>
         </tr>
         <tr v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" class="tableRows">
-          <td>
-            <p style="text-align: center">{{ time }}</p>
-          </td>
           <td
             v-for="date in dates"
             :key="date.formatDate"
@@ -317,6 +319,7 @@ onClickOutside(addForm, handleClickOutside)
         </td>
         </tr>
       </table>
+      </div>
       <!-- <div v-if="showForm" ref="addForm" class="addForm">
         <AddTasksForm
           :tasksRef="tasksRef"
@@ -326,7 +329,8 @@ onClickOutside(addForm, handleClickOutside)
         />
       </div> -->
     </div>
-  </div>
+
+    </div>
 </template>
 
 <style scoped>
@@ -372,9 +376,8 @@ th {
 
 .tableContainer {
   display: flex;
-  justify-content: center;
+  width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .tasksModal {
@@ -400,8 +403,14 @@ th {
 }
 .timeline{
   background-color: rgb(170, 57, 76); 
-  width: 100%; 
   height: 2px;
-
+}
+.indexItem{
+  height: 30px; 
+  width: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgb(93, 93, 93);
 }
 </style>

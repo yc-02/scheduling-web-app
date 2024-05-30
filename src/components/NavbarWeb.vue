@@ -16,8 +16,7 @@ nav{
    font-size: 16px;
    display: flex;
    gap: 9px;
-   width: 80vw;
-   max-width: 1300px;
+   width: 100%;
 }
 a{
    background-color: var(--primary-color);

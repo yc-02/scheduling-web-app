@@ -3,6 +3,10 @@ import { dateSlug, daysInWeek, getDateWithoutTime, renderMonth } from '@/utils/d
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
+const props = defineProps<{
+  datesWithItems:string[]
+}>()
+
 const today = new Date()
 const todayDate = today.getDate()
 const thisYear = today.getFullYear()
@@ -127,9 +131,14 @@ const handleClickDate = (date: Date) => {
           :to="{ name: 'activities', params: { slug: `${dateSlug(dates)}` } }"
           class="projectLink"
         >
-          <p class="dateItems" :class="{ today: todayStyle(index) }">{{ special }}</p>
+          <p class="dateItems" :class="{ today: todayStyle(index)}">{{ special }}</p>
         </RouterLink>
-        <p class="dateItems smScreenItems" :class="{ today: todayStyle(index) }">{{ special }}</p>
+        <!-- show on small screen -->
+        <div class="smScreenItems">
+          <p :class="{ today: todayStyle(index),datesWithItems:datesWithItems.includes(dates.toString())}">
+            {{ special?.toString().includes('Today')?special?.toString().trim().split(' ')[0]:special }}
+          </p>
+        </div>
         <slot name="project" :datesAndIndex="{ dates, index, month }"></slot>
       </div>
     </div>
@@ -137,9 +146,7 @@ const handleClickDate = (date: Date) => {
 </template>
 <style scoped>
 .container {
-  width: 80vw;
   min-height: 73vh;
-  max-width: 1300px;
   background-color: whitesmoke;
   border-radius: 10px;
   padding: 20px;
@@ -195,30 +202,38 @@ const handleClickDate = (date: Date) => {
 .smScreenItems {
   display: none;
 }
+
 @media screen and (max-width: 1000px) {
   .container {
-    width: 90vw;
-    min-height: 30vh;
-    height: 500px;
+    min-height: 35vh;
+    background-color: inherit;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  .titleContainer{
+    min-height: 5vw;
   }
   .calendar {
-    gap: 2px;
-    width: 100%;
+    gap: 0;
+    min-height: 30vw;
+    height: 30vh;
+
+
   }
   .grid-dates {
-    min-height: 50px;
-    height: 60px;
-    border-radius: 5px;
-    font-size: 12px;
+    border-bottom:1px solid rgb(223, 223, 223);
     border-radius: 0;
+    min-height: 1em;
+    font-size: 14px;
   }
   .grid-days {
-    font-size: 13px;
+    border-bottom:1px solid rgb(223, 223, 223);
     border-radius: 0;
-  }
-  .dateItems {
-    width: 100%;
-    height: 40px;
+    min-height: 1em;
+    font-size: 14px;
+    display:flex;
+    align-items: center;
+    justify-content: center;
   }
   .calendarButton,
   .calendarDate {
@@ -230,9 +245,35 @@ const handleClickDate = (date: Date) => {
   }
   .smScreenItems {
     display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
   }
   .grid-dates{
     cursor: pointer;
   }
+
+  .datesWithItems{
+    border-radius: 10px;
+    color: rgb(7, 117, 100);
+  }
+  .today{
+    color: brown;
+  }
+}
+@media screen and (max-width:800px){
+
+.grid-dates,.grid-days {
+  font-size: 12px;
+
+}
+.calendarButton,
+.calendarDate {
+  font-size: 13px;
+}
+
+
+
+
 }
 </style>

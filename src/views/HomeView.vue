@@ -113,9 +113,11 @@ onMounted(() => {
   font-weight: 500;
 }
 .container {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  width: 100%;
 }
 .formContainer {
   position: absolute;

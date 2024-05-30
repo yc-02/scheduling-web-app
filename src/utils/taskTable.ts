@@ -1,4 +1,4 @@
-import { eachDayOfInterval, eachHourOfInterval, format } from 'date-fns'
+import { eachHourOfInterval, format } from 'date-fns'
 import type { DatesType } from 'env'
 import { getHourAndMinutes, timeToMinutes } from './dateUtils'
 //generate a timeline from 12:00 AM to 12:00 AM
@@ -42,13 +42,12 @@ const  doTimesOverlap = ({
   const getTasksPosition = ({
     taskDate,
     startTime,
-    endTime,tableDataWidth,tableDataIndexWidth,dates
+    endTime,tableDataWidth,dates
   }: {
     taskDate: string
     startTime: string
     endTime: string
     tableDataWidth:number
-    tableDataIndexWidth:number
     dates:DatesType[]
   }) => {
     const endHourAndMinutes = getHourAndMinutes(endTime)
@@ -65,7 +64,7 @@ const  doTimesOverlap = ({
     //each cell height is 30px
     //each minute is 30px/60min
     const pixelByMin = 30/60
-    const pxLeft = dateIndex * tableDataWidth + tableDataIndexWidth
+    const pxLeft = dateIndex * tableDataWidth
     const height = (endTimeIndex - startTimeIndex+1) * 30 +endHourAndMinutes.minutes*pixelByMin
     const pxTop = (startTimeIndex+1) * 30+pixelByMin*startHourAndMinutes.minutes
  
