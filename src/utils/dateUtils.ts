@@ -2,17 +2,13 @@ import { eachDayOfInterval, format, isAfter, isBefore } from "date-fns";
 import type { Project, Task } from "env";
 import type { DocumentData } from "firebase/firestore";
 
-const getUTCDate = (date:string)=>{
-    const utcDate = new Date(new Date(date).getUTCFullYear(), new Date(date).getUTCMonth(), new Date(date).getUTCDate());
-    return utcDate
 
-}
 const inputDefaultDate = (date:string)=>{
-    return format(new Date(date),'yyyy-MM-dd')
+  return format(date,'yyyy-MM-dd')
 }
 
 const formatSubmitDate = (date:string)=>{
-    return format(getUTCDate(date),'MMM dd, yyyy')
+    return format(date,'MMM dd, yyyy')
     
 }
 const dateSlug = (date:Date)=>{
@@ -36,46 +32,40 @@ const toTimeString = (time:string)=>{
 const daysInWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 //render month
-function renderMonth(month:number){
+function renderMonth(month: number) {
   switch (month) {
     case 0:
-      return 'January'
+      return 'Jan';
     case 1:
-      return 'February'
+      return 'Feb';
     case 2:
-      return 'March'
+      return 'Mar';
     case 3:
-      return 'April'
+      return 'Apr';
     case 4:
-      return 'May'
+      return 'May';
     case 5:
-      return 'June'
+      return 'Jun';
     case 6:
-      return'July'
+      return 'Jul';
     case 7:
-      return 'August'
+      return 'Aug';
     case 8:
-      return 'September'
+      return 'Sep';
     case 9:
-      return 'October'
+      return 'Oct';
     case 10:
-      return 'November'
+      return 'Nov';
     case 11:
-      return 'December'
+      return 'Dec';
+    default:
+      return '';
   }
 }
 
- //sort by start time
- const formatTime = (time:string)=>{
-  return new Date(`May 24, 2024 ${time}`)
-}
-const sortTasksByTime = ({tasks}:{tasks:Task[]|DocumentData[]})=>{
-  tasks.sort((a,b)=>{
-      const dateA = formatTime(a.startTime).getTime();
-      const dateB = formatTime(b.startTime).getTime();
-      return dateA - dateB
-      }); 
-}
+
+
+
 
 const sortProjectByStart = ({projects}:{projects:Project[]})=>{
   projects.sort((a,b)=>{
@@ -133,7 +123,7 @@ const getFormattedDatesInterval = ({project}:{project:Project}) => {
 
 //sort tasks by time
 
-const tasksSorted = (tasks:Task[])=>{
+const sortTasksByTime = (tasks:Task[]|DocumentData[])=>{
   tasks.sort((a,b)=>{
     const startComparison = a.startTime.localeCompare(b.startTime)
     if(startComparison!==0){
@@ -144,8 +134,10 @@ const tasksSorted = (tasks:Task[])=>{
 
 }
 
+const compareTime = (startTime:string,endTime:string)=>{
+  return startTime.localeCompare(endTime)
+}
 export {
-    getUTCDate,
     inputDefaultDate,
     dateSlug,
     formatSubmitDate,
@@ -158,5 +150,5 @@ export {
     toTimeString,
     getDatesInterval,
     getFormattedDatesInterval,
-    tasksSorted
+    compareTime
 }

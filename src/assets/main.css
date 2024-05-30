@@ -44,3 +44,28 @@ nav{
   background: var(--secondary-color); 
   border-radius: 10px;
 }
+
+form{
+  display: inline-flex;
+  flex-direction: column;
+}
+label{
+  width: 230px;
+}
+input{
+  width: 230px;
+  padding: 13px;
+  border-radius: 5px;
+  border:none
+}
+.checkLable{
+  display: flex;
+  align-items: center;
+  width: 100px;
+}
+.btn-form{
+  padding: 9px;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-weight: 600;
+}

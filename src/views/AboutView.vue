@@ -1,15 +1,17 @@
+<script setup lang="ts">
+import CalendarByMonth from '@/components/CalendarByMonth.vue';
+</script>
+
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
+  <div class="container">
+    <CalendarByMonth/>
   </div>
 </template>
 
 <style>
-@media (min-width: 1024px) {
-  .about {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
+.container{
+  width: 500px;
+  height: 500px;
+  background-color: white;
 }
 </style>

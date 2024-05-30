@@ -14,7 +14,7 @@ const tasksDate = formatSubmitDate(slug.toString())
 // const dailyTasks = useCollection(dailyTasksRef)
 
 const projectByDate = {
-  projectName: 'Tasks',
+  projectName: 'All Activities',
   startDate: tasksDate,
   endDate: tasksDate,
   important: false
@@ -30,6 +30,6 @@ onMounted(() => {
 </script>
 <template>
   <div>
-    <!-- <TasksTable :projectFromParent="project" :tasksFromParent="tasks" /> -->
+    <TasksTable :projectFromParent="project" :tasksFromParent="tasks" />
   </div>
 </template>

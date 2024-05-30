@@ -10,7 +10,7 @@ import { handleDeleteDoc } from '@/services/deleteData'
 const props = defineProps<{
   projectFromParent: DocumentData | undefined | Project
   tasksFromParent: DocumentData[] | undefined 
-  tasksRef: CollectionReference<DocumentData, DocumentData>
+  tasksRef?: CollectionReference<DocumentData, DocumentData>
 }>()
 
 const project = ref(props.projectFromParent)
@@ -182,7 +182,7 @@ watch(props, (newValue) => {
   dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
   tableStyle()
   tasksStyle()
-  sortTasksByTime({ tasks:tasks.value??[] })
+  sortTasksByTime(tasks.value??[])
   showModal.value = tasks.value?.map(() => false)
   isLoading.value = false
 })
@@ -231,6 +231,7 @@ onClickOutside(addForm, handleClickOutside)
         >
           <div class="tasksItems" :class="{ completed: task.checked }">
             <div class="tasks">
+              <p>{{ task.path.split('/')[1] }}</p>
               <p>{{ task.taskName }}</p>
             </div>
           </div>

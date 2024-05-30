@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { getDatesInterval, inputDefaultDate, toTimeString } from '@/utils/dateUtils';
+import { formatSubmitDate, getDatesInterval, inputDefaultDate, toTimeString } from '@/utils/dateUtils';
 import type { Project, Task } from 'env'
 import { ref, watch, type Ref } from 'vue';
 import MyCheckbox from './MyCheckbox.vue';
 import { RouterLink } from 'vue-router';
-import { isAfter, isBefore, isEqual } from 'date-fns';
+import { format, isAfter, isBefore, isEqual } from 'date-fns';
 import AddTasksForm from './AddTasksForm.vue';
 
 
@@ -27,16 +27,23 @@ watch(props,()=>{
 const showPast=ref(false)
 const isCurrentOrPast = (project:Project)=>{
   if(showPast.value===true){
-    return isBefore(new Date(project.endDate),new Date())||isEqual(new Date(),new Date(project.endDate))
+    return isBefore(new Date(project.endDate),formatSubmitDate(new Date().toString()))
   }else{
-    return isAfter(new Date(project.endDate),new Date())||isEqual(new Date(),new Date(project.endDate))
+    return isAfter(new Date(project.endDate),formatSubmitDate(new Date().toString()))||isEqual(formatSubmitDate(new Date().toString()),new Date(project.endDate))
   }
 }
 
-const clicked:Ref<{date:string,time:string,id:string}>= ref({date:'',time:'',id:''})
+
+const clicked:Ref<{date:string,time:string,id:string,eventOrTask:string}>= ref({date:'',time:'',id:'',eventOrTask:''})
 const showForm=ref()
 const handleClick = (date:Date,projectId:string)=>{
-  clicked.value={date:inputDefaultDate(date.toString()),time:'',id:projectId}
+  let event:string=''
+  if(projectId.includes('-')){
+    event='event'
+  }else{
+    event='task'
+  }
+  clicked.value={date:inputDefaultDate(date.toString()),time:'',id:projectId,eventOrTask:event}
   showForm.value=true
 }
 const showTask = (task:Task,projectId:string,date:Date)=>{
@@ -53,17 +60,18 @@ return filtered.length
 }
 
 
+
 </script>
 
 <template>
   <div style="position: relative;">
   <div class="buttonContainer"> 
-    <button @click="showPast=false" :class="{currentProjects:!showPast}">Current Projects</button>
-    <button @click="showPast=true" :class="{currentProjects:showPast}">Past Projects</button>
+    <button @click="showPast=false" :class="{currentProjects:!showPast}">Current</button>
+    <button @click="showPast=true" :class="{currentProjects:showPast}">Past</button>
   </div>
-  <div v-if="showForm" class="addTaskForm">
+  <!-- <div v-if="showForm" class="addTaskForm">
           <AddTasksForm :minDate="clicked.date" :maxDate="clicked.date" :clicked="clicked" />
-          </div>
+  </div> -->
   <div class="projectsContainer">
     <div v-for="project in projects" :key="project.id">
       <div v-if="isCurrentOrPast(project)" class="projects">
@@ -71,7 +79,7 @@ return filtered.length
          <RouterLink :to="{name:'project',params:{id:project.id}}">
           <p class="projectTitle">{{ project.projectName }}</p>
          </RouterLink>
-        <p class="projectTitle">{{ project.startDate }} - {{ project.endDate }}</p>
+        <p class="projectTitle" v-if="!project.events">{{ project.startDate }} - {{ project.endDate }}</p>
         </div>
         <div v-for="date in getDatesInterval({startDate:project.startDate,endDate:project.endDate})" :key="date.formatDate" class="tasksContainer">
         <div class="dateTitle">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { projectsCollectionRef } from '@/firebase';
 import { formatSubmitDate, inputDefaultDate } from '@/utils/dateUtils';
+import { isBefore } from 'date-fns';
 import { addDoc} from 'firebase/firestore';
 import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -9,13 +10,13 @@ const projectName:Ref<string> = ref('')
 const startDate:Ref<string> = ref(inputDefaultDate(new Date().toString()))
 const endDate:Ref<string>=ref(inputDefaultDate(new Date().toString()))
 const important = ref(false)
-
-
+const errorMessage=ref()
 
 
 const route = useRouter()
 const handleSubmit=async()=>{
-    const newProject = {
+    if(isBefore(startDate.value,endDate.value)){
+        const newProject = {
         projectName:projectName.value,
         startDate:formatSubmitDate(startDate.value),
         endDate:formatSubmitDate(endDate.value),
@@ -25,6 +26,11 @@ const handleSubmit=async()=>{
     await addDoc(projectsCollectionRef,newProject).then((docRef)=>{
         route.push({name:'project',params:{id:docRef.id}})
     })
+
+    }else{
+        errorMessage.value='Start date cannot be later than end date.'
+    }
+
 }
 
 </script>
@@ -32,8 +38,8 @@ const handleSubmit=async()=>{
 <template>
         <form @submit.prevent="handleSubmit">
             <label>
-                Name
-                <input placeholder="Name"  v-model.trim="projectName" required />
+                Title
+                <input placeholder="Title"  v-model.trim="projectName" required />
             </label>
             <label>
                 Start Date
@@ -43,18 +49,21 @@ const handleSubmit=async()=>{
                 End Date
                 <input type="date" v-model="endDate" required/>
             </label>
-            <label>
-                <input type="checkbox" v-model="important" style="width: 50px;"/>
+            <label class="error">{{ errorMessage }}</label>
+            <label class="checkLable">
+                <input type="checkbox" v-model="important" class="checkInput"/>
                 important
             </label>
-            <button class="btn-primary">Add Project</button>
+            <button class="btn-primary btn-form">Add Project</button>
         </form>
 
 </template>
 <style scoped>
-
-button{
-    margin-top: 10px;
-    font-weight: 600;
+.error{
+   font-size: small;
+   color: rgb(185, 72, 119);
 }
+
+
+
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ProjectsList from'@/components/ProjectsList.vue';
 import { fetchAllProjects, fetchTasks } from '@/services/fetchData';
-import { sortProjectByStart, tasksSorted } from '@/utils/dateUtils';
+import { sortProjectByStart, sortTasksByTime } from '@/utils/dateUtils';
 import type { Project, Task } from 'env';
 import { ref, watch, type Ref } from 'vue';
 
@@ -15,7 +15,7 @@ watch(projects,()=>{
 const tasks:Ref<Task[]> =ref([])
 fetchTasks({tasks})
 watch(tasks,()=>{
-    tasksSorted(tasks.value)
+    sortTasksByTime(tasks.value)
 })
 
 </script>

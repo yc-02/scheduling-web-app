@@ -14,5 +14,16 @@ import NavbarWeb from './components/NavbarWeb.vue';
     </main>
 </template>
 
-<style>
+<style scoped>
+
+header{
+  display: flex;
+  justify-content: center;
+}
+main{
+  display: flex;
+  justify-content: center;
+}
+
+
 </style>
