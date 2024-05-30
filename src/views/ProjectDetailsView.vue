@@ -4,7 +4,7 @@ import { collection } from 'firebase/firestore'
 import { useRoute } from 'vue-router'
 import TasksTable from '@/components/TasksTable.vue'
 import { fetchProjectById, fetchTasksByProjectId } from '@/services/fetchData'
-import { ref, type Ref } from 'vue'
+import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import type { Task } from 'env'
 
 const route = useRoute()
@@ -17,12 +17,35 @@ fetchProjectById({ project: project, id: projectId })
 const projectTasksRef = collection(db, 'projects', projectId, 'tasks')
 const tasks: Ref<Task[]> = ref([])
 fetchTasksByProjectId({ projectId: projectId, tasksById: tasks })
+const parentWidth=ref()
+const parentRef:Ref<HTMLDivElement|null>=ref(null)
+const screenWidth = ref(window.innerWidth)
+
+
+const updateScreenWidth = () => {
+  screenWidth.value = window.innerWidth
+  parentWidth.value=parentRef.value?.offsetWidth
+  
+}
+
+onMounted(() => {
+  parentWidth.value = parentRef.value?.offsetWidth
+  window.addEventListener('resize', updateScreenWidth)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenWidth)
+})
 </script>
 
 <template>
-  <main>
-    <TasksTable :projectFromParent="project" :tasksFromParent="tasks" :tasksRef="projectTasksRef" />
-  </main>
+  <div ref="parentRef" class="container">
+    <TasksTable :projectFromParent="project" :tasksFromParent="tasks" :tasksRef="projectTasksRef" :parentWidth="parentWidth" :screenWidth="screenWidth"/>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.container{
+  width: 100%;
+}
+
+</style>

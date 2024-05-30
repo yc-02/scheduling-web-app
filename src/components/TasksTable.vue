@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch, type Ref } from 'vue'
-import { onClickOutside } from '@vueuse/core'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
+import { onClickOutside, useNow } from '@vueuse/core'
 import { type CollectionReference, type DocumentData } from 'firebase/firestore'
 import type { DatesType, Project } from 'env'
 import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors } from '@/utils/taskTable'
-import { getDatesInterval, inputDefaultDate, sortTasksByTime } from '@/utils/dateUtils'
+import { formatDate, getDateWithoutTime, getDatesInterval, inputDefaultDate, sortTasksByTime } from '@/utils/dateUtils'
 import AddTasksForm from '@/components/AddTasksForm.vue'
 import { handleDeleteDoc } from '@/services/deleteData'
+import { doc } from 'firebase/firestore/lite'
 const props = defineProps<{
   projectFromParent: DocumentData | undefined | Project
   tasksFromParent: DocumentData[] | undefined 
   tasksRef?: CollectionReference<DocumentData, DocumentData>
+  parentWidth:number
+  screenWidth?:number
 }>()
 
 const project = ref(props.projectFromParent)
@@ -19,7 +22,7 @@ const tasks = ref(props.tasksFromParent)
 //total days in project
 const dates: Ref<DatesType[]> = ref([])
 //loading before render
-const isLoading = ref(true)
+
 
 
 //change table rows color
@@ -37,21 +40,22 @@ const tableRowStyle = () => {
 
 
 
+
 //table style
 const myTable: Ref<HTMLElement | null> = ref(null)
 const projectRef: Ref<HTMLElement[] | null> = ref([])
 const tableDataWidth = ref(0)
 const tableDataIndexWidth = ref(60)
-const tableWidth = ref(1000)
+const tableWidth = ref(1400)
+
+
+
+
+
 
 //table style
 const tableStyle = () => {
   const table: HTMLElement | null = myTable.value
-  if (dates.value.length > 3) {
-    tableWidth.value = 2000
-  } else {
-    tableWidth.value = 1000
-  }
   nextTick(() => {
     const tableData = document.getElementsByTagName('td')
     if (table !== null) {
@@ -170,22 +174,57 @@ const closeModal = () => {
 }
 onClickOutside(modalTarget, closeModal)
 
-//onmounted change table style
-onMounted(() => {
-  tableRowStyle()
+//get timeline indicator
+const now = useNow()
+const nowTime = now.value.getHours()
+const nowMinutes=computed(() => now.value.getMinutes());
+const marginTop = computed(()=>{
+  return 0.5*nowMinutes.value
 })
 
+
+
+const timelineStyle = ()=>{
+  nextTick(()=>{
+    const myDiv:HTMLDivElement|null = document.querySelector('.timeline')
+    if (myDiv) {
+    myDiv.style.marginTop = `${marginTop.value}px`;
+  }
+})
+}
+
+onMounted(()=>{
+tableRowStyle()
+timelineStyle()
+//change timeline indicator
+watch(nowMinutes,()=>{
+  timelineStyle()
+
+})
 //watch data change
-watch(props, (newValue) => {
-  tasks.value = newValue.tasksFromParent
-  project.value = newValue.projectFromParent
+watch(props, () => {
+  if(props.screenWidth && props.screenWidth<1000){
+    tableWidth.value = props.parentWidth*dates.value.length
+  }else {
+    tableWidth.value = props.parentWidth
+  }
+  tasks.value = props.tasksFromParent
+  project.value = props.projectFromParent
   dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
   tableStyle()
   tasksStyle()
   sortTasksByTime(tasks.value??[])
   showModal.value = tasks.value?.map(() => false)
-  isLoading.value = false
 })
+})
+
+
+
+
+
+
+
+
 
 type DateAndTime = {
   date: string
@@ -204,19 +243,27 @@ const handleClickOutside = () => {
 }
 
 onClickOutside(addForm, handleClickOutside)
+
+
+
 </script>
 
 <template>
-  <div v-if="isLoading">Loading...</div>
-  <div class="headerContainer">
-    <p class="title">{{ project?.projectName }}</p>
-    <div v-if="dates && dates.length > 1">{{ project?.startDate }} - {{ project?.endDate }}</div>
-    <div v-else>
-      {{ project?.startDate }}
-    </div>
-  </div>
   <div class="container">
-    <div v-show="!isLoading" class="tableContainer">
+    <div class="headerContainer">
+      <p class="title">{{ project?.projectName }}</p>
+      <div v-if="dates && dates.length > 1">{{ project?.startDate }} - {{ project?.endDate }}</div>
+      <div v-else>
+        {{ project?.startDate }}
+      </div>
+    </div>
+    <div class="tableContainer">
+      <div class="tableIndex" style="margin-top: 30px;">
+        <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" class="tableRows" style="display: flex; justify-content: center;" >
+            <p class="indexItem" style="height: 30px; align-items: center; display: flex;">{{ time }}</p>
+        </div>
+        <div class="tableRows"></div>
+      </div>
       <table style="position: relative" ref="myTable">
         <!-- abosolute position tasks -->
         <div
@@ -263,7 +310,11 @@ onClickOutside(addForm, handleClickOutside)
             v-for="date in dates"
             :key="date.formatDate"
             @dblclick="handleDateTime(date.date.toString(), time)"
-          ></td>
+          >
+          <div style="height: 100%;">
+          <div v-if="nowTime === parseInt(time.split(':')[0]) && date.date.toString()===getDateWithoutTime(new Date()).toString()" class="timeline"></div>
+          </div>
+        </td>
         </tr>
       </table>
       <!-- <div v-if="showForm" ref="addForm" class="addForm">
@@ -279,14 +330,13 @@ onClickOutside(addForm, handleClickOutside)
 </template>
 
 <style scoped>
+
 table {
   border-collapse: collapse;
-  border: 1px solid var(--border-color-light);
 }
 
 td,
 th {
-  border-right: 1px solid var(--border-color-light);
   height: 30px;
 }
 .headerContainer {
@@ -315,9 +365,13 @@ th {
   overflow: hidden;
 }
 
-.tableContainer {
+.tableIndex {
   display: flex;
   flex-direction: column;
+}
+
+.tableContainer {
+  display: flex;
   justify-content: center;
   overflow-x: auto;
   overflow-y: hidden;
@@ -330,7 +384,7 @@ th {
   padding: 20px;
   border-radius: 20px;
   box-shadow: 1px 1px rgb(9, 9, 9, 0.1);
-  z-index: 1;
+  z-index: 2;
   top: 0;
   cursor: auto;
 }
@@ -343,5 +397,11 @@ th {
 .addForm {
   position: absolute;
   left: 45%;
+}
+.timeline{
+  background-color: rgb(170, 57, 76); 
+  width: 100%; 
+  height: 2px;
+
 }
 </style>
