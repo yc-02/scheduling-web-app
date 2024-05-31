@@ -4,7 +4,7 @@ import { onClickOutside, useNow } from '@vueuse/core'
 import { type CollectionReference, type DocumentData } from 'firebase/firestore'
 import type { DatesType, Project } from 'env'
 import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors } from '@/utils/taskTable'
-import { formatDate, getDateWithoutTime, getDatesInterval, inputDefaultDate, sortTasksByTime } from '@/utils/dateUtils'
+import { formatDate, getDateWithoutTime, getDatesInterval, inputDefaultDate, sortTasksByTime, toTimeString } from '@/utils/dateUtils'
 import AddTasksForm from '@/components/AddTasksForm.vue'
 import { handleDeleteDoc } from '@/services/deleteData'
 import { doc } from 'firebase/firestore/lite'
@@ -27,7 +27,8 @@ const dates: Ref<DatesType[]> = ref([])
 
 //change table rows color
 const tableRowStyle = () => {
-  const tableRows = document.querySelectorAll('.tableRows')
+  nextTick(()=>{
+    const tableRows = document.querySelectorAll('.tableRows')
   for (let i = 0; i < tableRows.length; i++) {
     const row = tableRows[i] as HTMLElement
     if (i % 2 === 0) {
@@ -36,6 +37,8 @@ const tableRowStyle = () => {
       row.style.backgroundColor = 'white'
     }
   }
+
+  })
 }
 
 
@@ -46,7 +49,7 @@ const myTable: Ref<HTMLElement | null> = ref(null)
 const projectRef: Ref<HTMLElement[] | null> = ref([])
 const tableDataWidth = ref(0)
 const tableWidth = ref(1000)
-const indexItemWidth=ref(60)
+
 
 
 
@@ -55,20 +58,17 @@ const indexItemWidth=ref(60)
 
 //table style
 const tableStyle = () => {
-  const table: HTMLElement | null = myTable.value
   nextTick(() => {
+    const table: HTMLElement | null = myTable.value
     const tableData: HTMLCollectionOf<HTMLTableCellElement> = document.getElementsByTagName('td')
     if (table !== null) {
       table.style.width = `${tableWidth.value}px`
-      console.log(myTable.value?.style.width,'mytable width')
-      console.log(tableData)
       for (let i = 0; i <= dates.value.length; i++) {
       if(tableData[i]!==undefined){
         tableData[i].style.width = `${tableWidth.value / dates.value.length}px`
       };
     };
       tableDataWidth.value = tableWidth.value / dates.value.length
-      console.log(tableDataWidth.value,'what')
     }
   })
 }
@@ -96,7 +96,7 @@ const tasksStyle = () => {
         projectRef.value[i].style.top = position.top
         projectRef.value[i].style.left = position.left
         projectRef.value[i].style.height = position.height
-        projectRef.value[i].style.width = position.width
+        projectRef.value[i].style.width = `${tableDataWidth.value}px`
         if (taskDate && count[taskDate]) {
           count[taskDate]++
         } else if (taskDate) {
@@ -159,7 +159,6 @@ const tasksStyle = () => {
 const showModal = ref()
 
 const toggleModal = (index: number) => {
-  console.log('clicked', index)
   showModal.value[index] = true
   for (const key in showModal.value) {
     if (parseInt(key) !== index) {
@@ -196,14 +195,12 @@ const timelineStyle = ()=>{
 }
 
 onMounted(()=>{
-tableRowStyle()
-timelineStyle()
-//change timeline indicator
-watch(nowMinutes,()=>{
-  timelineStyle()
+  tableRowStyle()
+  watch(nowMinutes,()=>{
+    timelineStyle()
 
-})
-//watch data change
+  })
+  //watch data change
 watch(props, () => {
   if(props.screenWidth && props.screenWidth<1000){
     tableWidth.value = (props.parentWidth-50)*dates.value.length
@@ -218,33 +215,26 @@ watch(props, () => {
   sortTasksByTime(tasks.value??[])
   showModal.value = tasks.value?.map(() => false)
 })
+
 })
 
 
 
 
 
+//emit date and time to parents
+const emit=defineEmits(['clickedDateTime','showForm'])
 
-
-
-
-type DateAndTime = {
-  date: string
-  time: string
-}
-const showForm = ref(false)
-const clicked: Ref<DateAndTime> = ref({ date: '', time: '' })
-const handleDateTime = (date: string, time: string) => {
-  showForm.value = true
-  clicked.value = { date: inputDefaultDate(date), time: time }
+// const showForm = ref(false)
+const handleClickDateTime = (date: string, time: string) => {
+  const dateAndTime = {date:inputDefaultDate(date),time:time}
+  emit('clickedDateTime',dateAndTime)
+  emit('showForm',true)
+  console.log(date,time)
 }
 
-const addForm = ref(null)
-const handleClickOutside = () => {
-  showForm.value = false
-}
 
-onClickOutside(addForm, handleClickOutside)
+
 
 
 
@@ -252,18 +242,23 @@ onClickOutside(addForm, handleClickOutside)
 
 <template>
     <div class="headerContainer">
-      <p class="title">{{ project?.projectName }}</p>
-      <div v-if="dates && dates.length > 1">{{ project?.startDate }} - {{ project?.endDate }}</div>
-      <div v-else>
-        {{ project?.startDate }}
+      <div class="titleContainer">
+        <p class="title">{{ project?.projectName }}</p>
+        <button class="addButton" @click="emit('showForm',true)">
+          <font-awesome-icon icon="fa-solid fa-plus" size="lg" /> 
+          <p>Add</p>
+        </button>
       </div>
+      <em v-if="dates && dates.length > 1" class="subTitle">{{ project?.startDate }} - {{ project?.endDate }}</em>
+      <em v-else class="subTitle">
+        {{ project?.startDate }}   {{ props.parentWidth }}
+      </em>
     </div>
     <div style="display: flex;">
       <div class="tableIndex" style="margin-top: 30px;">
-          <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" 
+          <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex"
           class="tableRows" 
-          style="display: flex; 
-          justify-content: center;" >
+          style="display: flex; justify-content: center;" >
               <p class="indexItem">{{ time }}</p>
           </div>
           <div class="tableRows indexItem"></div>
@@ -284,8 +279,9 @@ onClickOutside(addForm, handleClickOutside)
         >
           <div class="tasksItems" :class="{ completed: task.checked }">
             <div class="tasks">
-              <p>{{ task.path.split('/')[1] }}</p>
+              <div v-if="task.checked"><font-awesome-icon icon="fa-solid fa-check" /></div>
               <p>{{ task.taskName }}</p>
+              <em>{{ toTimeString(task.startTime) }}-{{ toTimeString(task.endTime) }}</em>
             </div>
           </div>
           <!-- tasks modal -->
@@ -294,12 +290,14 @@ onClickOutside(addForm, handleClickOutside)
             ref="modalTarget"
             v-if="showModal && showModal[i] && task.id !== 'newItem'"
           >
-          {{ task.taskDate }}
+            <div class="buttonContainer">
+              <button class="editButton"><font-awesome-icon icon="fa-solid fa-pen-to-square" /></button>
+              <button @click="handleDeleteDoc({ path: task.path })" class="deleteButton"><font-awesome-icon icon="fa-solid fa-trash"/></button>
+            </div>
+            <p>{{ task.taskDate }}</p>
             <p>{{ task.taskName }}</p>
-            <p>{{ task.startTime }}-{{ task.endTime }}</p>
+            <em>{{ task.startTime }}-{{ task.endTime }}</em>
             <p>{{ task.details }}</p>
-            <p>{{ task.checked }}</p>
-            <button @click="handleDeleteDoc({ path: task.path })">Delete</button>
           </div>
         </div>
         <tr>
@@ -311,7 +309,7 @@ onClickOutside(addForm, handleClickOutside)
           <td
             v-for="date in dates"
             :key="date.formatDate"
-            @dblclick="handleDateTime(date.date.toString(), time)"
+            @dblclick="handleClickDateTime(date.date.toString(), time)"
           >
           <div style="height: 100%;">
           <div v-if="nowTime === parseInt(time.split(':')[0]) && date.date.toString()===getDateWithoutTime(new Date()).toString()" class="timeline"></div>
@@ -320,14 +318,6 @@ onClickOutside(addForm, handleClickOutside)
         </tr>
       </table>
       </div>
-      <!-- <div v-if="showForm" ref="addForm" class="addForm">
-        <AddTasksForm
-          :tasksRef="tasksRef"
-          :minDate="inputDefaultDate(project?.startDate)"
-          :maxDate="inputDefaultDate(project?.endDate)"
-          :clicked="clicked"
-        />
-      </div> -->
     </div>
 
     </div>
@@ -345,9 +335,19 @@ th {
 }
 .headerContainer {
   display: flex;
+  flex-direction: column;
+  margin-bottom: 9px;
+}
+.titleContainer{
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 9px;
-  position: relative;
+}
+.addButton{
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  color: var(--text-color-soft);
 }
 .projectTask {
   position: absolute;
@@ -358,16 +358,17 @@ th {
 .tasksItems {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
-  height: 100%;
-  width: 90%;
+  border-radius: 5px;
+  width: 95%;
   box-sizing: content-box;
   background-color: #88b2cc;
 }
 .tasks {
-  padding: 6px;
+  padding: 3px;
   overflow: hidden;
 }
+
+
 
 .tableIndex {
   display: flex;
@@ -382,21 +383,54 @@ th {
 
 .tasksModal {
   position: absolute;
-  background-color: white;
-  width: 200px;
+  background-color: rgb(245, 245, 245);
   padding: 20px;
+  width: 100%;
   border-radius: 20px;
   box-shadow: 1px 1px rgb(9, 9, 9, 0.1);
   z-index: 2;
   top: 0;
   cursor: auto;
 }
+.deleteButton,.editButton{
+  color: rgb(187, 39, 94);
+  font-size: inherit;
+}
+.editButton{
+  color: rgb(20, 157, 102);
+}
+.buttonContainer{
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+@media screen and (max-width:800px) {
+.tasks{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tasks p{
+  font-size: 13px;
+
+}
+.tasks em{
+  font-size: 10px;
+}
+.tasksModal{
+  font-size: 14px;
+}
+button{
+  padding: 0;
+  margin: 0;
+}
+
+}
+
 .completed {
   background-color: rgb(187, 187, 187) !important;
 }
-.completed::before {
-  content: 'completed';
-}
+
 .addForm {
   position: absolute;
   left: 45%;
@@ -412,5 +446,12 @@ th {
   justify-content: center;
   align-items: center;
   color: rgb(93, 93, 93);
+}
+.title{
+  text-transform: capitalize;
+}
+
+.tableHeader{
+  font-weight: 600;
 }
 </style>

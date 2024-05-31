@@ -1,5 +1,5 @@
 import { db, projectsCollectionRef, tasksCollectionRef } from "@/firebase"
-import type { Task } from "env";
+import type { Project } from "env";
 import {collection, doc, getDoc, getDocs, query, where, type DocumentData } from "firebase/firestore"
 import type { Ref } from "vue"
 
@@ -19,7 +19,7 @@ async function fetchAllProjects({projects,isLoading}:{projects:Ref<DocumentData[
 }
 
 //get single project document by id
-async function fetchProjectById({project,id}:{project:Ref<DocumentData>,id:string}){
+async function fetchProjectById({project,id}:{project:Ref<Project|DocumentData|undefined>,id:string}){
     try{
         const projectDocRef = doc(db,'projects',id)
         const docSnap = await getDoc(projectDocRef)
@@ -45,7 +45,7 @@ async function fetchTasks({tasks}:{tasks:Ref<DocumentData[]>}){
     
 }
 //fetch tasks collection by project id
-async function fetchTasksByProjectId({projectId,tasksById}:{projectId:string,tasksById:Ref<DocumentData[]>}) {
+async function fetchTasksByProjectId({projectId,tasksById,isLoading}:{projectId:string,tasksById:Ref<DocumentData[]>,isLoading:Ref<boolean>}) {
     const projectTasksRef = collection(db,'projects',projectId,'tasks')
     try{
         const querySnapshot = await getDocs(projectTasksRef);
@@ -55,8 +55,9 @@ async function fetchTasksByProjectId({projectId,tasksById}:{projectId:string,tas
 
     }catch(error){
         console.log(error)
+    }finally{
+        isLoading.value=false
     }
-    
     
 }
 

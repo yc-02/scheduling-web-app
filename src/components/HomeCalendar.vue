@@ -10,6 +10,7 @@ import {
   formatDate,
   getDateWithoutTime,
   getDatesInterval,
+  inputDefaultDate,
   sortTasksByTime,
   toTimeString
 } from '@/utils/dateUtils'
@@ -271,13 +272,13 @@ const modalCorner = (index: number) => {
 
 const slice=computed(()=>{
   if(props.screenWidth<1200){
-    return 10
-  }else if(props.screenWidth<1300){
     return 13
-  }else if(props.screenWidth>1500){
-    return 18
-  }else{
+  }else if(props.screenWidth<1300){
     return 15
+  }else if(props.screenWidth>1500){
+    return 19
+  }else{
+    return 17
   }
   
 })
@@ -286,16 +287,6 @@ const slice=computed(()=>{
 
 <template>
   <div style="width: 100%;">
-    <!-- <CalendarLeft>
-      <template #todayTasks>
-        <div v-for="(task, index) in todayTasks" :key="index" class="tasksContainer">
-            <RouterLink :to="{name:'project',params:{id:task.path?.split('/')[1]}}">
-              <p class="subTitle">{{ todayEventsProject(task.path) }}</p>
-            </RouterLink>
-            <MyCheckbox :path="task.path" :index="index" :checked="checked" :title="task.taskName" @is-checked="(isChecked)=>checked[index]=isChecked"/>
-        </div>
-      </template>
-    </CalendarLeft> -->
     <CalendarByMonth :dates-with-items="combinedDates"
       @change-month="(month) => (monthIndex = month)"
       @clicked-date="(date) => (clickedDate = date)"
@@ -361,7 +352,7 @@ const slice=computed(()=>{
                   class="events"
                   @click="handleShowEvents(slotProps.datesAndIndex.index, project.id, index)"
                 >
-                  <p>E: {{ event.slice(0, slice) }}{{ event.length > slice ? '..' : '' }}</p>
+                  <p>{{ event.slice(0, slice) }}{{ event.length > slice ? '..' : '' }}</p>
                 </div>
                 <!-- modal for events -->
                 <div
@@ -451,7 +442,7 @@ const slice=computed(()=>{
                   v-if="showProjects(slotProps, project)"
                   class="events"
                 >
-                  E: {{ event }}
+                  {{ event }}
                 </div>
                 <!-- modal for events -->
                 <div
@@ -490,7 +481,9 @@ const slice=computed(()=>{
     </CalendarByMonth>
     <!-- projects and tasks view on small screen -->
     <div class="smItems">
-      <p>{{ formatDate(clickedDate) }}</p>
+      <RouterLink :to="{name:'activities',params:{slug:inputDefaultDate(clickedDate)}}">
+        <p class="dateTitle" style="display: inline-flex;">{{ formatDate(clickedDate) }}</p>
+      </RouterLink>
       <div v-for="project in projects" :key="project.id">
       <div
         v-if="!project.events && showSmScreenProjects(project, clickedDate).includes(true)"
@@ -528,11 +521,6 @@ const slice=computed(()=>{
       </div>
     </div>
     </div>
-
-    <!-- <div class="addForm" v-if="showAddForm" ref="addForm">
-      <p>Add Event</p>
-      <AddTasksForm :clicked="clicked" :projects="projects"/>
-    </div> -->
   </div>
 </template>
 <style scoped>
@@ -677,6 +665,9 @@ const slice=computed(()=>{
   .smItems {
     padding: 10px;
     font-size: 14px;
+  }
+  .eventTitle:hover,.projectTitle:hover,.dateTitle:hover{
+    background-color: var(--primary-color-extra-light);
   }
 }
 </style>

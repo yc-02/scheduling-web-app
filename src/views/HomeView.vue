@@ -73,8 +73,8 @@ onMounted(() => {
         <p>{{ now.toLocaleTimeString() }}</p>
       </div>
       <div class="buttonContainer">
-        <button @click="handleClickPForm">Create Project</button>
-        <button @click="handleClickEForm">Create Event</button>
+        <button @click="handleClickPForm"><font-awesome-icon icon="fa-solid fa-plus" /> Project</button>
+        <button @click="handleClickEForm"><font-awesome-icon icon="fa-solid fa-plus" /> Event</button>
       </div>
     </div>
     <div class="homeComponent">
@@ -119,18 +119,7 @@ onMounted(() => {
   justify-content: center;
   width: 100%;
 }
-.formContainer {
-  position: absolute;
-  left: 40%;
-  background-color: var(--primary-color-extra-light);
-  padding: 20px 30px;
-  border-radius: 10px;
-  box-shadow: 1px 1px 6px rgb(0, 0, 0, 0.2);
-  max-height: 45vh;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
+
 .form {
   height: 90%;
   display: flex;
@@ -148,16 +137,31 @@ button {
   font-weight: 600;
 }
 @media screen and (max-width:1000px) {
-  .timeContainer{
-    flex-direction: column;
+  .titleContainer{
+    padding: 0;
   }
-  .buttonContainer{
-    flex-direction: column;
+  .timeContainer p{
+    font-size: 15px;
   }
   button{
     padding: 0;
     background-color: inherit;
     color: black;
   }
+  .formContainer {
+  position: absolute;
+  align-items: center;
+  background-color: whitesmoke;
+  left: 0;
+  right: 0;
+  top: 16%;
+  min-height: 90%;
+  margin: 0;
+}
+
+.form{
+  min-height: 60%;
+  align-items: start;
+}
 }
 </style>

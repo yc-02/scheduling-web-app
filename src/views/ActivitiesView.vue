@@ -22,11 +22,8 @@ const projectByDate = {
 
 const project = ref()
 const tasks: Ref<DocumentData[]> = ref([])
-const isLoading = ref(false)
 
 fetchAllTasksByDate({ tasks: tasks, date: tasksDate })
-
-
 
 const parentWidth:Ref<number>=ref(0)
 const parentRef:Ref<HTMLDivElement|null>=ref(null)

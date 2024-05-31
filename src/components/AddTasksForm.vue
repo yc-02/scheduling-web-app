@@ -12,7 +12,7 @@ const props = defineProps<{
     maxDate?:string;
     clicked:{date:string,time?:string,id?:string,isEvent:boolean};
     eventExist?:boolean;
-    projects:Project[]
+    projects?:Project[]
 }>()
 
 const title = ref('')
@@ -20,35 +20,34 @@ const taskDate = ref(props.clicked.date)
 const startTime = ref(props.clicked.time)
 const endTime = ref()
 const taskDetails=ref('')
-const tasksRef=ref()
+const taskRefId=ref(props.clicked.id)
 
 
-watch(props,(newValue)=>{
-    taskDate.value=newValue.clicked?.date
-    startTime.value=newValue.clicked?.time  
-    if(newValue.clicked.id){
-        tasksRef.value=collection(db,'projects',newValue.clicked.id,'tasks')
-    }
- 
+watch(props,()=>{
+    taskDate.value=props.clicked.date
+    startTime.value=props.clicked.time
+    taskRefId.value=props.clicked.id
+    
 })
 
 if(props.clicked.isEvent===true){
     watch(taskDate,()=>{
-        tasksRef.value=collection(db,'projects',taskDate.value,'tasks')
+        taskRefId.value=taskDate.value
     },{immediate:true})
 }
 const isEventExist = computed(()=>{
-    const exist = props.projects.filter(a=>a.id===taskDate.value)
-    return exist.length>0? true: false
+    const exist = props.projects?.filter(a=>a.id===taskDate.value)
+    return exist && exist.length>0? true: false
+
 })
 
 
 const errorMessage=ref('')
 const router = useRouter()
 const handleSubmit=async()=>{
-    if(startTime.value && compareTime(startTime.value,endTime.value)<0){
+    if(startTime.value && compareTime(startTime.value,endTime.value)<=0){
     //for events only
-    if(props.clicked.isEvent===true)
+    if(props.clicked.isEvent===true){
         if(isEventExist.value === true){
         await updateDoc(doc(db,'projects',taskDate.value),{
         projectName:taskDate.value,
@@ -56,15 +55,16 @@ const handleSubmit=async()=>{
         startDate:formatSubmitDate(taskDate.value),
         endDate:formatSubmitDate(taskDate.value),
         important:false,
-    })
-    }else{
-        await setDoc(doc(db,'projects',taskDate.value),{
-        projectName:taskDate.value,
-        events:arrayUnion(title.value),
-        startDate:formatSubmitDate(taskDate.value),
-        endDate:formatSubmitDate(taskDate.value),
-        important:false,
-    })
+        })
+        }else{
+            await setDoc(doc(db,'projects',taskDate.value),{
+            projectName:taskDate.value,
+            events:arrayUnion(title.value),
+            startDate:formatSubmitDate(taskDate.value),
+            endDate:formatSubmitDate(taskDate.value),
+            important:false,
+        })
+        }
     }
     // //for events or tasks
     const newTask={
@@ -75,11 +75,14 @@ const handleSubmit=async()=>{
         details:taskDetails.value,
         checked:false,
     }
-
-    await addDoc(tasksRef.value,newTask).then(()=>{
+    console.log(taskRefId.value)
+    if(taskRefId.value){
+    await addDoc(collection(db,'projects',taskRefId.value,'tasks'),newTask).then(()=>{
         router.go(0)
     })
-
+    }else{
+        alert('something wrong!')
+    }
     }else{
         errorMessage.value='End time cannot be earlier than start time.'
     }
@@ -92,6 +95,7 @@ const handleSubmit=async()=>{
 </script>
 <template>
     <form style="display: inline-flex; flex-direction: column;" @submit.prevent="handleSubmit">
+       {{ taskRefId }}
         <label>
           Title
             <input type="text" placeholder="Title" v-model="title" required>

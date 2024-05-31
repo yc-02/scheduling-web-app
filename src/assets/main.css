@@ -69,3 +69,18 @@ input{
   margin-top: 10px;
   font-weight: 600;
 }
+.formContainer{
+  position: absolute;
+  top: 20%;
+  left: 40%;
+  min-width: 20%;
+  background-color: var(--primary-color-extra-light);
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 1px 1px 6px rgb(0, 0, 0, 0.2);
+  max-height: 45vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 3;
+  gap: 9px;
+}

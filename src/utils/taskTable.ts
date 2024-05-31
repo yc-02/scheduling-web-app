@@ -52,28 +52,29 @@ const  doTimesOverlap = ({
   }) => {
     const endHourAndMinutes = getHourAndMinutes(endTime)
     const startHourAndMinutes = getHourAndMinutes(startTime)
-
-
     const getStartTime = startHourAndMinutes.hours>9?`${startHourAndMinutes.hours}:00`:`0${startHourAndMinutes.hours}:00`
-    const getEndTime = endHourAndMinutes.hours>9?`${endHourAndMinutes.hours}:00`:`0${endHourAndMinutes.hours}:00`
     const startTimeIndex = formattedTimeline.indexOf(getStartTime)
-    const endTimeIndex = formattedTimeline.indexOf(getEndTime)
     const formattedTaskDate = format(new Date(taskDate), 'EEE, dd')
     const dateIndex = dates.findIndex((date) => date.formatDate.includes(formattedTaskDate))
-    
+
+
     //each cell height is 30px
     //each minute is 30px/60min
+   let height
     const pixelByMin = 30/60
     const pxLeft = dateIndex * tableDataWidth
-    const height = (endTimeIndex - startTimeIndex+1) * 30 +endHourAndMinutes.minutes*pixelByMin
+    const itemHeight = (endHourAndMinutes.hours-startHourAndMinutes.hours)*30 +(endHourAndMinutes.minutes-startHourAndMinutes.minutes)*pixelByMin
     const pxTop = (startTimeIndex+1) * 30+pixelByMin*startHourAndMinutes.minutes
- 
+    if(itemHeight===0){
+     height = 10
+    }else{
+      height=itemHeight
+    }
 
     return {
       top: `${pxTop}px`,
       left: `${pxLeft}px`,
       height: `${height}px`,
-      width: `${tableDataWidth}px`
     }
   }
   function generateColors(numItems: number) {
