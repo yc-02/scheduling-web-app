@@ -1,35 +1,26 @@
 <script setup lang="ts">
-import { isAfter, isBefore, isEqual } from 'date-fns'
-import CalendarByMonth from './CalendarByMonth.vue'
-import { computed, nextTick, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { type DocumentData } from 'firebase/firestore'
-import { fetchAllTasksByDate, fetchTasks } from '@/services/fetchData'
-import type { Project, Task } from 'env'
+import { isAfter, isBefore, isEqual } from 'date-fns';
+import CalendarByMonth from './CalendarByMonth.vue';
+import { computed, nextTick, ref, watch, type Ref } from 'vue';
+import { type DocumentData } from 'firebase/firestore';
+import { fetchTasks } from '@/services/fetchData';
+import type { Project, Task } from 'env';
 import {
-  dateSlug,
   formatDate,
   getDateWithoutTime,
   getDatesInterval,
-  inputDefaultDate,
-  sortTasksByTime,
-  toTimeString
-} from '@/utils/dateUtils'
-import { onClickOutside } from '@vueuse/core'
-import MyCheckbox from './MyCheckbox.vue'
-import AddTasksForm from './AddTasksForm.vue'
-import CalendarLeft from './CalendarLeft.vue'
+  getNonFormatDateInterval,
+} from '@/utils/dateUtils';
+import { onClickOutside } from '@vueuse/core';
 
-
+//get all projects and screenwidth from parents
 const props = defineProps<{
   projects: Project[]
   screenWidth:number
 }>()
 
-const todayTasks: Ref<Task[]> = ref([])
-//get data from firebase
-const today = formatDate(new Date())
-fetchAllTasksByDate({ tasks: todayTasks, date: today })
 
+//show projects on calendar
 const showProjects = (
   slotProps: {
     datesAndIndex: {
@@ -47,6 +38,7 @@ const showProjects = (
   )
 }
 
+// project div ref
 const projectRef: Ref<HTMLElement[]> = ref([])
 
 //when more than 3 projects in one day
@@ -92,6 +84,7 @@ const showMoreProjects = () => {
   })
 }
 
+//watch month or projects change 
 const monthIndex = ref(new Date().getMonth())
 watch(
   () => monthIndex.value,
@@ -100,13 +93,6 @@ watch(
   }
 )
 
-// today's tasks checked
-const checked: Ref<boolean[]> = ref(todayTasks.value.map((task) => task.checked))
-
-watch(todayTasks, () => {
-  sortTasksByTime(todayTasks.value)
-  checked.value = todayTasks.value.map((task) => task.checked)
-})
 
 watch(
   () => props.projects,
@@ -114,66 +100,39 @@ watch(
     showMoreProjects()
   }
 )
+
+//click to show modal
 const clickedIndex = ref()
 const showAllProjects = ref(null)
 const closeModal = () => {
   clickedIndex.value = ''
 }
+//click outside to close
 onClickOutside(showAllProjects, closeModal)
 
-const todayEventsProject = (taskPath: string | undefined) => {
-  const getProject = props.projects.filter((p) => taskPath?.includes(p.path))
-  return getProject[0].projectName
-}
-const eventExist = ref()
-const clicked: Ref<{ date: string; id: string; time: string; isEvent: boolean }> = ref({
-  date: '',
-  id: '',
-  time: '',
-  isEvent: false
-})
-const showAddForm = ref(false)
-const addForm = ref(null)
-onClickOutside(addForm, () => {
-  showAddForm.value = false
-  clicked.value = { date: '', id: '', time: '', isEvent: false }
-})
 
-watch(clicked, () => {
-  const exist = props.projects.filter((a) => a.id === clicked.value.id)
-  exist.length > 0 ? (eventExist.value = true) : (eventExist.value = false)
-})
 
 // toggle details modal
 const detailsModal = ref(null)
 const detailsModalInAll = ref(null)
 
-const eventsModal = ref(null)
-const eventsModalInAll = ref(null)
 
 const showDetails = ref(false)
 const showDetailsInAll = ref(false)
 
-const showEvents = ref(false)
-const showEventsInAll = ref(false)
 
 const showDetailsIndex = ref(0)
 const showDetailsId = ref('')
-const eventIndex = ref(0)
 
 onClickOutside(detailsModal, () => {
   showDetails.value = false
 })
-onClickOutside(eventsModal, () => {
-  showEvents.value = false
-})
+
 onClickOutside(detailsModalInAll, () => {
   showDetailsInAll.value = false
 })
 
-onClickOutside(eventsModalInAll, () => {
-  showDetailsInAll.value = false
-})
+
 
 const handleShowDetails = (index: number, id: string) => {
   showDetails.value = true
@@ -187,32 +146,19 @@ const handleShowDetailsInAll = (index: number, id: string) => {
   showDetailsId.value = id
 }
 
-const handleShowEvents = (index: number, id: string, eIndex: number) => {
-  showEvents.value = true
-  showDetailsIndex.value = index
-  showDetailsId.value = id
-  eventIndex.value = eIndex
-}
 
-const handleShowEventsInAll = (index: number, id: string, eIndex: number) => {
-  showEventsInAll.value = true
-  showDetailsIndex.value = index
-  showDetailsId.value = id
-  eventIndex.value = eIndex
-}
 
 const tasks: Ref<Task[]> = ref([])
 fetchTasks({ tasks })
 
-const pDates: Ref<{ formatDate: string; date: Date }[]> = ref([])
-const eDates: Ref<{ formatDate: string; date: Date }[]> = ref([])
-
+//dates have projects
+const pDates: Ref<string[]> = ref([])
 watch(
   props,
   () => {
     const  result=[]
     for (let i = 0; i < props.projects.length; i++) {
-      result.push(getDatesInterval({
+      result.push(getNonFormatDateInterval({
         startDate: props.projects[i].startDate,
         endDate: props.projects[i].endDate
       }))
@@ -220,31 +166,19 @@ watch(
     pDates.value=result.flat()
   }
 )
-watch(tasks, () => {
-  const result=[]
-  for (let i = 0; i < tasks.value.length; i++) {
-    result.push(getDatesInterval({
-      startDate: tasks.value[i].taskDate,
-      endDate: tasks.value[i].taskDate
-    }))
-  }
-  eDates.value=result.flat()
-})
-const combinedDates: ComputedRef<string[]> = computed(() => {
-  const newArray = pDates.value.concat(eDates.value)
-  const uniqueArray: Set<string> = new Set()
-  newArray.forEach((a) => {
-    uniqueArray.add(a.date.toString())
-  })
-  return Array.from(uniqueArray)
-})
 
+
+
+//click date to show projects on sm screen
 const clickedDate: Ref<Date> = ref(getDateWithoutTime(new Date()))
 const showSmScreenProjects = (project: Project, clicked: Date) => {
   return getDatesInterval({ startDate: project.startDate, endDate: project.endDate }).map(
     (a) => a.date.toString() == clicked.toString()
   )
 }
+
+
+//open modal directions based on index
 const modalOpenleftIndex = [6, 13, 20, 27, 34, 5, 12, 19, 26, 33]
 const modalOpenUpIndex = [35, 36, 37, 38, 39]
 
@@ -270,46 +204,37 @@ const modalCorner = (index: number) => {
   }
 }
 
-const slice=computed(()=>{
-  if(props.screenWidth<1200){
-    return 13
-  }else if(props.screenWidth<1300){
-    return 15
-  }else if(props.screenWidth>1500){
-    return 19
-  }else{
-    return 17
-  }
-  
-})
+
 
 </script>
 
 <template>
   <div style="width: 100%;">
-    <CalendarByMonth :dates-with-items="combinedDates"
+    <CalendarByMonth :dates-with-projects="pDates"
       @change-month="(month) => (monthIndex = month)"
       @clicked-date="(date) => (clickedDate = date)"
     >
+    <template #addProject>
+      <slot name="addProject"></slot>
+    </template>
       <template #project="slotProps">
         <div class="container">
-          <!-- show project and events total under 3 -->
+          <!-- show project total under 3 -->
           <div v-for="project in projects" :key="project.id" class="projectsContainer">
             <div
               ref="projectRef"
               :data-dateindex="slotProps.datesAndIndex.index"
               :data-monthindex="slotProps.datesAndIndex.month"
-              v-if="showProjects(slotProps, project) && !project.events"
+              v-if="showProjects(slotProps, project)"
             >
               <!-- tasks on calendar click to show modal -->
               <div
                 @click="handleShowDetails(slotProps.datesAndIndex.index, project.id)"
-                :class="{ important: project.important, projects: !project.events }"
+                :class="{ important: project.important}"
                 class="clickDiv"
               >
                 <p class="projectTitle">
-                  P: {{ project.projectName.slice(0, slice)
-                  }}{{ project.projectName.length > slice ? '..' : '' }}
+                  {{ project.projectName }}
                 </p>
               </div>
               <!-- modal for details -->
@@ -340,55 +265,8 @@ const slice=computed(()=>{
                 </div>
               </div>
             </div>
-            <!-- show events on calendar -->
-            <div v-for="(event, index) in project.events" :key="index">
-              <div
-                ref="projectRef"
-                :data-dateindex="slotProps.datesAndIndex.index"
-                :data-monthindex="slotProps.datesAndIndex.month"
-                v-if="showProjects(slotProps, project)"
-              >
-                <div
-                  class="events"
-                  @click="handleShowEvents(slotProps.datesAndIndex.index, project.id, index)"
-                >
-                  <p>{{ event.slice(0, slice) }}{{ event.length > slice ? '..' : '' }}</p>
-                </div>
-                <!-- modal for events -->
-                <div
-                  ref="eventsModal"
-                  class="eventsModal"
-                  v-if="
-                    showEvents &&
-                    slotProps.datesAndIndex.index === showDetailsIndex &&
-                    project.id === showDetailsId &&
-                    eventIndex === index
-                  "
-                  :class="{
-                    modalOpenLeft: modalOpenLeft(slotProps.datesAndIndex.index),
-                    modalOpenUp: modalOpenUp(slotProps.datesAndIndex.index),
-                    modalCorner: modalCorner(slotProps.datesAndIndex.index)
-                  }"
-                >
-                  <div>
-                    <RouterLink :to="{ name: 'project', params: { id: project.id } }">
-                      <p class="eLinkTitle">{{ event }}</p>
-                    </RouterLink>
-                    <div
-                      v-for="task in tasks.filter(
-                        (t) => t.path?.includes(project.id) && event === t.taskName
-                      )"
-                      :key="task.id"
-                    >
-                      <p>{{ toTimeString(task.startTime) }} - {{ toTimeString(task.endTime) }}</p>
-                      <p>{{ task.details }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
-          <!-- show all projects and events -->
+          <!-- show all projects -->
           <div
             ref="showAllProjects"
             class="moreProjectsModal"
@@ -401,9 +279,9 @@ const slice=computed(()=>{
           >
             <div v-for="project in projects" :key="project.id">
               <div
-                v-if="showProjects(slotProps, project) && !project.events"
+                v-if="showProjects(slotProps, project)"
                 class="clickDiv"
-                :class="{ important: project.important, projects: !project.events }"
+                :class="{ important: project.important}"
                 @click="handleShowDetailsInAll(slotProps.datesAndIndex.index, project.id)"
               >
                 <p class="projectTitle">P: {{ project.projectName }}</p>
@@ -435,60 +313,21 @@ const slice=computed(()=>{
                   </div>
                 </div>
               </div>
-              <!-- all events  -->
-              <div v-for="(event, index) in project.events" :key="index">
-                <div
-                  @click="handleShowEventsInAll(slotProps.datesAndIndex.index, project.id, index)"
-                  v-if="showProjects(slotProps, project)"
-                  class="events"
-                >
-                  {{ event }}
-                </div>
-                <!-- modal for events -->
-                <div
-                  ref="eventsModalInAll"
-                  class="eventsModalInAll"
-                  :class="{
-                    modalOpenLeft: modalOpenLeft(slotProps.datesAndIndex.index),
-                    modalOpenUp: modalOpenUp(slotProps.datesAndIndex.index),
-                    modalCorner: modalCorner(slotProps.datesAndIndex.index)
-                  }"
-                  v-if="
-                    showEventsInAll &&
-                    slotProps.datesAndIndex.index === showDetailsIndex &&
-                    project.id === showDetailsId &&
-                    eventIndex === index
-                  "
-                >
-                  <RouterLink :to="{ name: 'project', params: { id: project.id } }">
-                    <p class="eLinkTitle">{{ event }}</p>
-                  </RouterLink>
-                  <div
-                    v-for="task in tasks.filter(
-                      (t) => t.path?.includes(project.id) && event === t.taskName
-                    )"
-                    :key="task.id"
-                  >
-                    <p>{{ toTimeString(task.startTime) }} - {{ toTimeString(task.endTime) }}</p>
-                    <p>{{ task.details }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
+        </div>
         </div>
       </template>
     </CalendarByMonth>
-    <!-- projects and tasks view on small screen -->
+    <!-- projects and tasks on small screen -->
     <div class="smItems">
-      <RouterLink :to="{name:'activities',params:{slug:inputDefaultDate(clickedDate)}}">
-        <p class="dateTitle" style="display: inline-flex;">{{ formatDate(clickedDate) }}</p>
-      </RouterLink>
+      <p class="dateTitle" style="display: inline-flex;">{{ formatDate(clickedDate) }}</p>
       <div v-for="project in projects" :key="project.id">
       <div
-        v-if="!project.events && showSmScreenProjects(project, clickedDate).includes(true)"
-        class="sProjectsContainer"
+        v-if="showSmScreenProjects(project, clickedDate).includes(true)"
+        style="border-bottom: 2px solid;"
       >
+      <!-- projects -->
+       <div class="sProjectsContainer">
         <RouterLink :to="{name:'project',params:{id:project.id}}">
           <p class="projectTitle">P: {{ project.projectName }}</p>
         </RouterLink>
@@ -497,27 +336,16 @@ const slice=computed(()=>{
           <p class="sDate">{{ project.endDate }}</p>
         </div>
       </div>
-      <div v-for="(event, index) in project.events" :key="index">
-        <div
-          v-for="task in tasks.filter((t) => t.path?.includes(project.id) && event === t.taskName)"
-          :key="task.id"
-        >
-          <div
-            v-if="new Date(task.taskDate).toString() === clickedDate.toString()"
-            class="sEventsContainer"
-          >
-            <div class="sEvents">
-              <RouterLink :to="{name:'activities', params: { slug: `${dateSlug(new Date(task.taskDate))}` }}">
-                <p class="eventTitle">{{ event }}</p>
-              </RouterLink>
-              <em>{{ task.details }}</em>
-            </div>
-            <div class="sEvents">
-              <p class="sTime">{{ toTimeString(task.startTime) }}</p>
-              <p class="sTime">{{ toTimeString(task.endTime) }}</p>
-            </div>
+        <!-- tasks by date -->
+      <div v-for="task in tasks" :key="task.id">
+        <div v-if="task.taskDate === formatDate(clickedDate) && task.path.includes(project.path)" class="sTasksContainer">
+          <p>{{ task.taskName }}</p>
+          <div>
+            <P>{{ task.startTime }}</P>
+            <p>{{ task.endTime }}</p>
           </div>
         </div>
+      </div>
       </div>
     </div>
     </div>
@@ -528,31 +356,24 @@ const slice=computed(()=>{
   position: relative;
   font-size: 14px;
 }
-.projects {
+.projects:hover,.pLinkTitle:hover {
+  background-color: var(--primary-color);
+}
+
+.clickDiv{
+  cursor: pointer;
   background-color: var(--primary-color-extra-light);
   padding-left: 3px;
   margin-bottom: 3px;
 }
-.projects:hover,.pLinkTitle:hover {
-  background-color: var(--primary-color);
-}
-.events {
-  background-color: var(--secondary-color);
-  padding-left: 3px;
-  margin-bottom: 3px;
-  cursor: pointer;
-}
-.eLinkTitle:hover,.events:hover{
-  background-color: var(--secondary-color-light);
-}
-.clickDiv{
-  cursor: pointer;
-}
 .startEndDate{
   font-size: 13px;
 }
-.projectTitle,.eLinkTitle, .pLinkTitle .events, .eventTitle{
+.projectTitle, .pLinkTitle{
   text-transform: capitalize;
+}
+.projectTitle{
+  text-wrap: nowrap;
 }
 .important {
   background-color: var(--important-color);
@@ -566,11 +387,9 @@ const slice=computed(()=>{
 
 .moreProjectsModal,
 .detailsModal,
-.eventsModal,
 .modalOpenLeft,
 .modalOpenUp,
 .detailsModalInAll,
-.eventsModalInAll,
 .modalCorner {
   position: absolute;
   background-color: whitesmoke;
@@ -603,62 +422,40 @@ const slice=computed(()=>{
   left: 100px;
 }
 
-.detailsModalInAll,
-.eventsModalInAll {
+.detailsModalInAll {
   left: 230px;
 }
 .modalCorner {
   top: -100px;
   left: -100px;
 }
-
-/* .tasksContainer {
-  display: flex;
-  flex-direction: column;
-  margin-left: 19px;
-}
-
-
-.checkedItem {
-  text-decoration: line-through;
-} */
-
-/* .subTitle{
-  font-size: 16px;
-  font-weight: 500;
-  text-transform: capitalize;
-}
-.subTitle:hover{
-  color: var(--primary-color);
-} */
-.smContainer,
 .smItems {
   display: none;
 }
 
 @media screen and (max-width: 1000px) {
-  .smContainer,
   .smItems {
     display: block;
   }
-  .projectsContainer,
-  .moreProjectsContainer {
+  .projectsContainer,.moreProjectsModal{
     display: none;
   }
 
   .sProjectsContainer,
-  .sEventsContainer {
+  .sTasksContainer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid lightgray;
   }
+  .sTasksContainer{
+    border-top: 1px solid lightgray;
+  }
+ 
   em {
     font-size: 14px;
     color: var(--text-color-soft);
   }
-  .sDate,
-  .sTime {
+  .sDate {
     text-align: end;
     color: var(--text-color-soft);
   }
@@ -666,7 +463,7 @@ const slice=computed(()=>{
     padding: 10px;
     font-size: 14px;
   }
-  .eventTitle:hover,.projectTitle:hover,.dateTitle:hover{
+  .projectTitle:hover{
     background-color: var(--primary-color-extra-light);
   }
 }

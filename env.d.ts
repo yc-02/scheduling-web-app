@@ -6,11 +6,10 @@ export type Project = {
     important:boolean;
     id:string;
     path:string;
-    events?:string[]
 }
 export type Task = {
-    id?:string;
-    path?:string;
+    id:string;
+    path:string;
     taskName:string;
     taskDate:string;
     startTime:string;

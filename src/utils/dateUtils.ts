@@ -125,6 +125,16 @@ const getDatesInterval = ({startDate,endDate}:{startDate:string,endDate:string})
 
   return datesVaule
 }
+const getNonFormatDateInterval = ({startDate,endDate}:{startDate:string,endDate:string})=>{
+  const dates = eachDayOfInterval({
+    start: new Date(startDate),
+    end: new Date(endDate)
+  })
+  const datesVaule = dates.map((item) => new Date(item).toString() )
+
+  return datesVaule
+}
+
 const getFormattedDatesInterval = ({project}:{project:Project}) => {
   const dates = eachDayOfInterval({
     start: new Date(project.startDate),
@@ -169,5 +179,6 @@ export {
     getFormattedDatesInterval,
     compareTime,
     getDateWithoutTime,
-    formatDate
+    formatDate,
+    getNonFormatDateInterval
 }

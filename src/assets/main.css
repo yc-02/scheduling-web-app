@@ -78,7 +78,6 @@ input{
   padding: 20px 30px;
   border-radius: 10px;
   box-shadow: 1px 1px 6px rgb(0, 0, 0, 0.2);
-  max-height: 45vh;
   display: flex;
   flex-direction: column;
   z-index: 3;

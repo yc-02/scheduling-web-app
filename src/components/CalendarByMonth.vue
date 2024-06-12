@@ -3,8 +3,8 @@ import { dateSlug, daysInWeek, getDateWithoutTime, renderMonth } from '@/utils/d
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-const props = defineProps<{
-  datesWithItems:string[]
+ defineProps<{
+  datesWithProjects:string[]
 }>()
 
 const today = new Date()
@@ -105,16 +105,19 @@ const handleClickDate = (date: Date) => {
 <template>
   <div class="container">
     <div class="titleContainer">
-      <p class="calendarDate">{{ renderMonth(month) }} {{ year }}</p>
-      <button @click="prevMonth" class="calendarButton">
-        <font-awesome-icon icon="fa-solid fa-chevron-left" />
-      </button>
-      <button @click="getToday" class="calendarButton">Today</button>
-      <button @click="nextMonth" class="calendarButton">
-        <font-awesome-icon icon="fa-solid fa-chevron-right" />
-      </button>
+      <slot name="addProject"></slot>
+      <div class="titleRight">
+        <p class="calendarDate">{{ renderMonth(month) }} {{ year }}</p>
+        <button @click="prevMonth" class="calendarButton">
+          <font-awesome-icon icon="fa-solid fa-chevron-left" />
+        </button>
+        <button @click="getToday" class="calendarButton">Today</button>
+        <button @click="nextMonth" class="calendarButton">
+          <font-awesome-icon icon="fa-solid fa-chevron-right" />
+        </button>
       <!-- <button @click="year--">Last Year</button>
       <button @click="year++">Next Year</button> -->
+      </div>
     </div>
     <div class="calendar">
       <p v-for="day in daysInWeek" :key="day" class="grid-days">
@@ -135,7 +138,7 @@ const handleClickDate = (date: Date) => {
         </RouterLink>
         <!-- show on small screen -->
         <div class="smScreenItems">
-          <p :class="{ today: todayStyle(index),datesWithItems:datesWithItems.includes(dates.toString())}">
+          <p :class="{ today: todayStyle(index),datesWithItems:datesWithProjects.includes(dates.toString())}">
             {{ special?.toString().includes('Today')?special?.toString().trim().split(' ')[0]:special }}
           </p>
         </div>
@@ -159,10 +162,14 @@ const handleClickDate = (date: Date) => {
 }
 .titleContainer {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   padding: 10px;
+  justify-content: space-between;
+}
+.titleRight{
+  display: flex;
   gap: 10px;
+  align-items: center;
 }
 .dateItems:hover,
 .calendarButton:hover {

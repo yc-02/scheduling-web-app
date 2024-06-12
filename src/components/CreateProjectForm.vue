@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { projectsCollectionRef } from '@/firebase';
 import { formatSubmitDate, inputDefaultDate } from '@/utils/dateUtils';
-import { isBefore } from 'date-fns';
+import { isBefore, isEqual } from 'date-fns';
 import { addDoc} from 'firebase/firestore';
 import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -15,7 +15,7 @@ const errorMessage=ref()
 
 const route = useRouter()
 const handleSubmit=async()=>{
-    if(isBefore(startDate.value,endDate.value)){
+    if(isBefore(startDate.value,endDate.value) || isEqual(startDate.value,endDate.value)){
         const newProject = {
         projectName:projectName.value,
         startDate:formatSubmitDate(startDate.value),
