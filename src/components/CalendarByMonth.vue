@@ -131,7 +131,7 @@ const handleClickDate = (date: Date) => {
         :class="{ pastDates: index < getFirstDay, nextMonthDates: nextMonthDatesStype(index) }"
       >
         <RouterLink
-          :to="{ name: 'activities', params: { slug: `${dateSlug(dates)}` } }"
+          :to="{ name: 'tasks', params: { slug: `${dateSlug(dates)}` } }"
           class="projectLink"
         >
           <p class="dateItems" :class="{ today: todayStyle(index)}">{{ special }}</p>

@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch, type Ref } from 'vue'
 import { onClickOutside, useNow } from '@vueuse/core'
 import { type CollectionReference, type DocumentData } from 'firebase/firestore'
 import type { DatesType, Project } from 'env'
 import { formattedTimeline, doTimesOverlap, getTasksPosition, generateColors } from '@/utils/taskTable'
-import { formatDate, getDateWithoutTime, getDatesInterval, inputDefaultDate, sortTasksByTime, toTimeString } from '@/utils/dateUtils'
-import AddTasksForm from '@/components/AddTasksForm.vue'
+import { getDateWithoutTime, getDatesInterval, inputDefaultDate, sortTasksByTime, toTimeString } from '@/utils/dateUtils'
 import { handleDeleteDoc } from '@/services/deleteData'
-import { doc } from 'firebase/firestore/lite'
+
 const props = defineProps<{
   projectFromParent: DocumentData | undefined | Project
   tasksFromParent: DocumentData[] | undefined 
@@ -48,7 +47,7 @@ const tableRowStyle = () => {
 const myTable: Ref<HTMLElement | null> = ref(null)
 const projectRef: Ref<HTMLElement[] | null> = ref([])
 const tableDataWidth = ref(0)
-const tableWidth = ref(1000)
+const tableWidth = ref((props.parentWidth-50)*dates.value.length)
 
 
 
@@ -73,6 +72,18 @@ const tableStyle = () => {
   })
 }
 
+// different color for projects
+const totalProjects = new Map()
+
+
+const projectsColors = ()=>{
+  if(props.tasksFromParent){
+  const colorMap = generateColors(props.tasksFromParent?.length)
+  props.tasksFromParent?.forEach((a,index)=>{
+  totalProjects.set(a.projectName,colorMap[index])
+})
+}
+}
 //when same time slots have many tasks
 
 const tasksStyle = () => {
@@ -134,10 +145,8 @@ const tasksStyle = () => {
             }
           }
         }
-
       //overlap time get unique div  
       const overlapsArray = Object.values(overlaps);
-      const colorMap = generateColors(overlapsArray.length)
       for(let i=0;i<overlapsArray.length;i++){
         const divArray:HTMLElement[]= overlapsArray[i]
         const uniqueDiv = [...new Set(divArray)]
@@ -145,16 +154,15 @@ const tasksStyle = () => {
           for(let i=0;i<uniqueDiv.length;i++){
           uniqueDiv[i].style.width=`${newWidth}px`
           uniqueDiv[i].style.left=`${parseInt(uniqueDiv[0].style.left)+i*newWidth}px`
-          const child: HTMLElement | null = uniqueDiv[i].querySelector('.tasksItems')
-          if (child) {
-            child.style.backgroundColor = colorMap[i]
-          }
         }
       }
 
     }
   })
 }
+
+
+
 
 const showModal = ref()
 
@@ -177,36 +185,19 @@ onClickOutside(modalTarget, closeModal)
 
 //get timeline indicator
 const now = useNow()
-const nowTime = now.value.getHours()
+const nowHour = computed(() => now.value.getHours());
 const nowMinutes=computed(() => now.value.getMinutes());
-const marginTop = computed(()=>{
-  return 0.5*nowMinutes.value
+const timeTop = computed(()=>{
+  return `${0.5*nowMinutes.value+30*(nowHour.value+1)}px`
 })
 
 
-
-const timelineStyle = ()=>{
-  nextTick(()=>{
-    const myDiv:HTMLDivElement|null = document.querySelector('.timeline')
-    if (myDiv) {
-    myDiv.style.marginTop = `${marginTop.value}px`;
-  }
-})
-}
 
 onMounted(()=>{
-  tableRowStyle()
-  watch(nowMinutes,()=>{
-    timelineStyle()
-
-  })
-  //watch data change
+tableRowStyle()
+//watch data change
 watch(props, () => {
-  if(props.screenWidth && props.screenWidth<1000){
-    tableWidth.value = (props.parentWidth-50)*dates.value.length
-  }else {
-    tableWidth.value = props.parentWidth-50
-  }
+  tableWidth.value = (props.parentWidth-50)*dates.value.length
   tasks.value = props.tasksFromParent
   project.value = props.projectFromParent
   dates.value=getDatesInterval({startDate:project.value?.startDate,endDate:project.value?.endDate})
@@ -214,46 +205,48 @@ watch(props, () => {
   tasksStyle()
   sortTasksByTime(tasks.value??[])
   showModal.value = tasks.value?.map(() => false)
+  projectsColors()
 })
 
 })
-
 
 
 
 
 //emit date and time to parents
-const emit=defineEmits(['clickedDateTime','showForm'])
+const emit=defineEmits(['clickedDateTime','showForm','task-deleted'])
 
 // const showForm = ref(false)
 const handleClickDateTime = (date: string, time: string) => {
   const dateAndTime = {date:inputDefaultDate(date),time:time}
   emit('clickedDateTime',dateAndTime)
   emit('showForm',true)
-  console.log(date,time)
 }
 
 
 
+// scroll table by day
+const tableContainer:Ref<HTMLDivElement|null> = ref(null)
+const scrolledIndex = ref(0)
+const scrollRight = (index:number)=>{
+  tableContainer.value?.scrollBy(tableDataWidth.value,0)
+  scrolledIndex.value = index+1
+}
+const scrollLeft = (index:number)=>{
+  tableContainer.value?.scrollBy(-tableDataWidth.value,0)
+  scrolledIndex.value = index-1
+}
+watch(tableDataWidth,()=>{
+  tableContainer.value?.scrollTo(tableDataWidth.value*scrolledIndex.value,0)
+})
 
-
-
+const handleDeleteTask = (path:string)=>{
+  handleDeleteDoc({ path:path })
+  emit('task-deleted',true)
+}
 </script>
 
 <template>
-    <div class="headerContainer">
-      <div class="titleContainer">
-        <p class="title">{{ project?.projectName }}</p>
-        <button class="addButton" @click="emit('showForm',true)">
-          <font-awesome-icon icon="fa-solid fa-plus" size="lg" /> 
-          <p>Add</p>
-        </button>
-      </div>
-      <em v-if="dates && dates.length > 1" class="subTitle">{{ project?.startDate }} - {{ project?.endDate }}</em>
-      <em v-else class="subTitle">
-        {{ project?.startDate }}   {{ props.parentWidth }}
-      </em>
-    </div>
     <div style="display: flex;">
       <div class="tableIndex" style="margin-top: 30px;">
           <div v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex"
@@ -263,7 +256,7 @@ const handleClickDateTime = (date: string, time: string) => {
           </div>
           <div class="tableRows indexItem"></div>
       </div>
-      <div class="tableContainer">
+      <div class="tableContainer" ref="tableContainer">
       <div>
         <table style="position: relative;" ref="myTable">
         <!-- abosolute position tasks -->
@@ -277,9 +270,9 @@ const handleClickDateTime = (date: string, time: string) => {
           ref="projectRef"
           @click="toggleModal(i)"
         >
-          <div class="tasksItems" :class="{ completed: task.checked }">
+          <div class="tasksItems" :class="{ completed: task.checked }" :style="{backgroundColor:totalProjects.get(task.projectName)}">
             <div class="tasks">
-              <div v-if="task.checked"><font-awesome-icon icon="fa-solid fa-check" /></div>
+              <!-- <div v-if="task.checked"><font-awesome-icon icon="fa-solid fa-check" /></div> -->
               <p>{{ task.taskName }}</p>
               <em>{{ toTimeString(task.startTime) }}-{{ toTimeString(task.endTime) }}</em>
             </div>
@@ -288,21 +281,32 @@ const handleClickDateTime = (date: string, time: string) => {
           <div
             class="tasksModal"
             ref="modalTarget"
-            v-if="showModal && showModal[i] && task.id !== 'newItem'"
+            v-if="showModal && showModal[i]"
+            :class="{modalOpenUp:task.startTime.split(':')[0]>=20}"
           >
             <div class="buttonContainer">
               <button class="editButton"><font-awesome-icon icon="fa-solid fa-pen-to-square" /></button>
-              <button @click="handleDeleteDoc({ path: task.path })" class="deleteButton"><font-awesome-icon icon="fa-solid fa-trash"/></button>
+              <button @click="handleDeleteTask(task.path)" class="deleteButton"><font-awesome-icon icon="fa-solid fa-trash"/></button>
             </div>
             <p>{{ task.taskDate }}</p>
+            <p>P:{{ task.projectName }}</p>
             <p>{{ task.taskName }}</p>
-            <em>{{ task.startTime }}-{{ task.endTime }}</em>
+            <em v-if="task.startTime !=='00:00' && task.endTime!=='00:00'">{{ task.startTime }}-{{ task.endTime }}</em>
+            <em v-else>All day</em>
             <p>{{ task.details }}</p>
           </div>
         </div>
         <tr>
-          <th v-for="date in dates" :key="date.formatDate" class="tableHeader">
-            {{ date.formatDate }}
+          <th v-for="date,index in dates" :key="date.formatDate" class="tableHeader">
+              <div class="tableHeaderDates">
+                <button @click="scrollLeft(index)" class="changeDateButton" v-if="dates.length>1">
+                <font-awesome-icon icon="fa-solid fa-arrow-left" />
+                </button>
+                {{ date.formatDate }}
+                <button @click="scrollRight(index)" class="changeDateButton" v-if="dates.length>1">
+                  <font-awesome-icon icon="fa-solid fa-arrow-right" />
+                </button>
+              </div>
           </th>
         </tr>
         <tr v-for="(time, timeIndex) in formattedTimeline" :key="timeIndex" class="tableRows">
@@ -311,8 +315,8 @@ const handleClickDateTime = (date: string, time: string) => {
             :key="date.formatDate"
             @dblclick="handleClickDateTime(date.date.toString(), time)"
           >
-          <div style="height: 100%;">
-          <div v-if="nowTime === parseInt(time.split(':')[0]) && date.date.toString()===getDateWithoutTime(new Date()).toString()" class="timeline"></div>
+          <div v-if="date.date.toString()===getDateWithoutTime(new Date()).toString()">
+            <div :style="{top:timeTop, width:`${tableDataWidth*0.99}px`}" class="timeNow"></div>
           </div>
         </td>
         </tr>
@@ -333,22 +337,7 @@ td,
 th {
   height: 30px;
 }
-.headerContainer {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 9px;
-}
-.titleContainer{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.addButton{
-  display: flex;
-  gap: 3px;
-  align-items: center;
-  color: var(--text-color-soft);
-}
+
 .projectTask {
   position: absolute;
   display: flex;
@@ -361,7 +350,6 @@ th {
   border-radius: 5px;
   width: 95%;
   box-sizing: content-box;
-  background-color: #88b2cc;
 }
 .tasks {
   padding: 3px;
@@ -385,12 +373,16 @@ th {
   position: absolute;
   background-color: rgb(245, 245, 245);
   padding: 20px;
-  width: 100%;
+  width: 99%;
   border-radius: 20px;
   box-shadow: 1px 1px rgb(9, 9, 9, 0.1);
   z-index: 2;
   top: 0;
   cursor: auto;
+}
+.modalOpenUp{
+  bottom: 0;
+  top: unset;
 }
 .deleteButton,.editButton{
   color: rgb(187, 39, 94);
@@ -404,7 +396,9 @@ th {
   justify-content: flex-end;
   gap: 9px;
 }
+
 @media screen and (max-width:800px) {
+
 .tasks{
   display: flex;
   flex-direction: column;
@@ -426,6 +420,7 @@ button{
 }
 
 }
+
 
 .completed {
   background-color: rgb(187, 187, 187) !important;
@@ -453,5 +448,18 @@ button{
 
 .tableHeader{
   font-weight: 600;
+}
+.tableHeaderDates{
+  display: flex; 
+  align-items: center; 
+  width: 100%; 
+  justify-content: center; 
+  gap: 20px;
+}
+.timeNow{
+  position:absolute;
+  height:2px;
+  background-color:brown;
+
 }
 </style>

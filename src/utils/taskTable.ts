@@ -65,8 +65,8 @@ const  doTimesOverlap = ({
     const pxLeft = dateIndex * tableDataWidth
     const itemHeight = (endHourAndMinutes.hours-startHourAndMinutes.hours)*30 +(endHourAndMinutes.minutes-startHourAndMinutes.minutes)*pixelByMin
     const pxTop = (startTimeIndex+1) * 30+pixelByMin*startHourAndMinutes.minutes
-    if(itemHeight===0){
-     height = 10
+    if(itemHeight<=30){
+     height = 30
     }else{
       height=itemHeight
     }
@@ -78,7 +78,7 @@ const  doTimesOverlap = ({
     }
   }
   function generateColors(numItems: number) {
-    const colors = ['#F4B9B8', '#549BAD', '#96AD90'] // Predefined colors
+    const colors = ['#768bbd', '#76bda6','#afbd76','#bda876','#bd8576']
     const numColors = colors.length
     const colorMap = []
   

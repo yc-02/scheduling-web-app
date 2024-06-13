@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 export type Project = {
-    projectName:String;
+    projectName:string;
     startDate:string;
     endDate:string;
     important:boolean;

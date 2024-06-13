@@ -62,10 +62,10 @@ onMounted(() => {
         </template>
       </HomeCalendar>
     </div>
-    <div class="formContainer" ref="pFormRef" v-if="showPForm">
-      <p class="title">Create Project</p>
-      <div class="form">
-        <CreateProjectForm />
+    <div class="formContainer"  v-if="showPForm">
+      <div class="formItem" ref="pFormRef">
+        <p class="title">Create Project</p>
+          <CreateProjectForm />
       </div>
     </div>
   </div>
@@ -122,20 +122,5 @@ button {
     background-color: white;
     padding: 6px;
   }
-  .formContainer {
-  position: absolute;
-  align-items: center;
-  background-color: whitesmoke;
-  left: 0;
-  right: 0;
-  top: 16%;
-  min-height: 90%;
-  margin: 0;
-}
-
-.form{
-  min-height: 60%;
-  align-items: start;
-}
 }
 </style>

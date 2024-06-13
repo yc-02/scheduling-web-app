@@ -6,11 +6,9 @@ const route= useRoute()
 <template>
    <nav>
       <RouterLink to="/" :class="{current:route.fullPath==='/'}" class="link">
-         <p>Home</p>
          <font-awesome-icon icon="fa-solid fa-calendar" size="sm"/>
       </RouterLink>
       <RouterLink to="/listview" :class="{current:route.fullPath==='/listview'}" class="link">
-         <p>List</p>
          <font-awesome-icon icon="fa-solid fa-list" size="sm" />
       </RouterLink>
    </nav>
@@ -18,14 +16,15 @@ const route= useRoute()
 <style scoped>
 nav{
    display: flex;
-   flex-direction: column;
    gap: 10px;
    padding: 10px;
+   justify-content: end;
+   width: 100%;
 }
 .link{
    display: inline-flex;
    align-items: center;
-   justify-content: space-between;
+   gap: 10px;
 }
 
 a:hover{

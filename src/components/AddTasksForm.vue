@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { addDoc, arrayUnion, collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { ref, watch } from 'vue';
+import { addDoc,collection } from 'firebase/firestore';
 import { useRouter } from 'vue-router';
 import { compareTime, formatSubmitDate } from '@/utils/dateUtils';
 import { db } from '@/firebase';
-import type { Project } from 'env';
 
 
 const props = defineProps<{
     minDate?:string;
     maxDate?:string;
-    clicked:{date:string,time?:string,id?:string,isEvent:boolean};
-    eventExist?:boolean;
-    projects?:Project[]
+    clicked:{date:string,time:string,projectId:string,projectName?:string};
 }>()
 
 const title = ref('')
@@ -20,65 +17,42 @@ const taskDate = ref(props.clicked.date)
 const startTime = ref(props.clicked.time)
 const endTime = ref()
 const taskDetails=ref('')
-const taskRefId=ref(props.clicked.id)
-
+const taskRefId=ref(props.clicked.projectId)
+const isAllDay=ref(false)
 
 watch(props,()=>{
     taskDate.value=props.clicked.date
     startTime.value=props.clicked.time
-    taskRefId.value=props.clicked.id
+    taskRefId.value=props.clicked.projectId
     
 })
 
-if(props.clicked.isEvent===true){
-    watch(taskDate,()=>{
-        taskRefId.value=taskDate.value
-    },{immediate:true})
-}
-const isEventExist = computed(()=>{
-    const exist = props.projects?.filter(a=>a.id===taskDate.value)
-    return exist && exist.length>0? true: false
-
+watch(isAllDay,()=>{
+    if(isAllDay.value){
+        startTime.value='00:00'
+        endTime.value='00:00'
+    }
 })
 
 
+const emit = defineEmits(['data-update'])
 const errorMessage=ref('')
-const router = useRouter()
+// const router = useRouter()
 const handleSubmit=async()=>{
     if(startTime.value && compareTime(startTime.value,endTime.value)<=0){
-    //for events only
-    if(props.clicked.isEvent===true){
-        if(isEventExist.value === true){
-        await updateDoc(doc(db,'projects',taskDate.value),{
-        projectName:taskDate.value,
-        events:arrayUnion(title.value),
-        startDate:formatSubmitDate(taskDate.value),
-        endDate:formatSubmitDate(taskDate.value),
-        important:false,
-        })
-        }else{
-            await setDoc(doc(db,'projects',taskDate.value),{
-            projectName:taskDate.value,
-            events:arrayUnion(title.value),
-            startDate:formatSubmitDate(taskDate.value),
-            endDate:formatSubmitDate(taskDate.value),
-            important:false,
-        })
-        }
-    }
     // //for events or tasks
     const newTask={
         taskName:title.value,
+        projectName:props.clicked.projectName,
         taskDate:formatSubmitDate(taskDate.value),
         startTime:startTime.value,
         endTime:endTime.value,
         details:taskDetails.value,
         checked:false,
     }
-    console.log(taskRefId.value)
     if(taskRefId.value){
     await addDoc(collection(db,'projects',taskRefId.value,'tasks'),newTask).then(()=>{
-        router.go(0)
+        emit('data-update',true)
     })
     }else{
         alert('something wrong!')
@@ -95,15 +69,18 @@ const handleSubmit=async()=>{
 </script>
 <template>
     <form style="display: inline-flex; flex-direction: column;" @submit.prevent="handleSubmit">
-       {{ taskRefId }}
         <label>
-          Title
-            <input type="text" placeholder="Title" v-model="title" required>
+          Task
+            <input type="text" placeholder="Task" v-model="title" required>
         </label>
         <label>
            Date
             <input type="date" v-model="taskDate" required :min="minDate" :max="maxDate"/>
         </label>
+        <label class="checkLable">
+        <input type="checkbox" class="checkInput" v-model="isAllDay"/> All Day  
+        </label>
+        <div class="timeContainer" v-if="!isAllDay">
         <label>
             Start Time 
             <input type="time" required v-model="startTime"/>
@@ -113,6 +90,7 @@ const handleSubmit=async()=>{
             <input type="time" v-model="endTime" required/>
         </label>
         <label class="error">{{ errorMessage }}</label>
+        </div>
         <label>
             Details
             <input type="text" v-model="taskDetails"/>
@@ -125,5 +103,8 @@ const handleSubmit=async()=>{
    font-size: small;
    color: rgb(185, 72, 119);
 }
-
+.timeContainer{
+    display:flex;
+    flex-direction:column;
+}
 </style>

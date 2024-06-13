@@ -5,7 +5,7 @@ import { dateSlug } from '@/utils/dateUtils';
 <template>
     <div class="calendarContainer">
       <div class="calendarLeft">
-        <RouterLink :to="{name:'activities',params:{slug:`${dateSlug(new Date())}`}}">
+        <RouterLink :to="{name:'tasks',params:{slug:`${dateSlug(new Date())}`}}">
           <p class="title">Today</p>
         </RouterLink>
         <slot name="todayTasks"></slot>

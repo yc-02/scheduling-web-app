@@ -62,7 +62,7 @@ async function fetchTasksByProjectId({projectId,tasksById,isLoading}:{projectId:
 }
 
 //query tasks by date
-async function fetchAllTasksByDate({tasks,date,isLoading}:{tasks:Ref<DocumentData[]>,date:string,isLoading?:Ref<boolean>}) {
+async function fetchAllTasksByDate({tasks,date,isLoading}:{tasks:Ref<DocumentData[]>,date:string,isLoading:Ref<boolean>}) {
     const q = query(tasksCollectionRef,where("taskDate","==",date))
     try{
         const querySnapshot = await getDocs(q)
@@ -72,9 +72,7 @@ async function fetchAllTasksByDate({tasks,date,isLoading}:{tasks:Ref<DocumentDat
     }catch(error){
         console.log(error)
     }finally{
-        if(isLoading){
             isLoading.value=false
-        }
     }
 }
 

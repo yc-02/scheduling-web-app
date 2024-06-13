@@ -61,7 +61,12 @@ input{
 .checkLable{
   display: flex;
   align-items: center;
-  width: 100px;
+  gap: 10px;
+  padding: 3px;
+}
+.checkInput{
+  width:auto;
+
 }
 .btn-form{
   padding: 9px;
@@ -71,10 +76,15 @@ input{
 }
 .formContainer{
   position: absolute;
+  left: 0;
+  right: 0;
   top: 20%;
-  left: 40%;
-  min-width: 20%;
-  background-color: var(--primary-color-extra-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.formItem{
+  background-color: whitesmoke;
   padding: 20px 30px;
   border-radius: 10px;
   box-shadow: 1px 1px 6px rgb(0, 0, 0, 0.2);
@@ -82,4 +92,14 @@ input{
   flex-direction: column;
   z-index: 3;
   gap: 9px;
+  justify-content: center;
+  align-items: center;
+  width: auto;
+}
+
+@media screen and (max-width:1000px) {
+  .formItem{
+    width: auto;
+  }
+  
 }

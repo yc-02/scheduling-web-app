@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isAfter, isBefore, isEqual } from 'date-fns';
 import CalendarByMonth from './CalendarByMonth.vue';
-import { computed, nextTick, ref, watch, type Ref } from 'vue';
+import { nextTick, ref, watch, type Ref } from 'vue';
 import { type DocumentData } from 'firebase/firestore';
 import { fetchTasks } from '@/services/fetchData';
 import type { Project, Task } from 'env';
@@ -10,6 +10,8 @@ import {
   getDateWithoutTime,
   getDatesInterval,
   getNonFormatDateInterval,
+  inputDefaultDate,
+  sortTasksByTime,
 } from '@/utils/dateUtils';
 import { onClickOutside } from '@vueuse/core';
 
@@ -167,6 +169,11 @@ watch(
   }
 )
 
+watch(tasks,()=>{
+  sortTasksByTime(tasks.value)
+})
+
+
 
 
 //click date to show projects on sm screen
@@ -320,7 +327,9 @@ const modalCorner = (index: number) => {
     </CalendarByMonth>
     <!-- projects and tasks on small screen -->
     <div class="smItems">
-      <p class="dateTitle" style="display: inline-flex;">{{ formatDate(clickedDate) }}</p>
+      <RouterLink :to="{name:'tasks',params:{slug:inputDefaultDate(clickedDate)}}">
+        <p class="dateTitle">{{ formatDate(clickedDate) }}</p>
+      </RouterLink>
       <div v-for="project in projects" :key="project.id">
       <div
         v-if="showSmScreenProjects(project, clickedDate).includes(true)"
@@ -341,7 +350,7 @@ const modalCorner = (index: number) => {
         <div v-if="task.taskDate === formatDate(clickedDate) && task.path.includes(project.path)" class="sTasksContainer">
           <p>{{ task.taskName }}</p>
           <div>
-            <P>{{ task.startTime }}</P>
+            <p>{{ task.startTime }}</p>
             <p>{{ task.endTime }}</p>
           </div>
         </div>
@@ -464,7 +473,7 @@ const modalCorner = (index: number) => {
     font-size: 14px;
   }
   .projectTitle:hover{
-    background-color: var(--primary-color-extra-light);
+    color: var(--primary-color);
   }
 }
 </style>
