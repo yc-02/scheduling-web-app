@@ -64,10 +64,11 @@ const clickedToForm=computed(()=>{
 })
 
 //add tasks toggle form
-const formRef = ref(null)
+const taskFormRef = ref(null)
 const showForm=ref(false)
-onClickOutside(formRef,()=>{
+onClickOutside(taskFormRef,()=>{
   showForm.value=false
+  taskToEdit.value=''
 })
 
 const deleteProject = ()=>{
@@ -79,28 +80,26 @@ const deleteProject = ()=>{
 //edit project toggle form
 const projectFormRef=ref(null)
 const showEditProject=ref(false)
-const dataToProjectForm = ref(project)
 const handleEditProject=()=>{
   showEditProject.value=true
-  dataToProjectForm.value=project.value
 }
 onClickOutside(projectFormRef,()=>{
   showEditProject.value=false
 })
+//edit task
+const taskToEdit = ref()
 
-//when task added without refreshing get task data
+//when task updated without refreshing get task data
 const taskUpdated = ref(false)
 watch(taskUpdated,()=>{
   showForm.value=false
-  fetchTasksByProjectId({ projectId: projectId, tasksById: tasks,isLoading:isLoading })
-  taskUpdated.value=false
+  fetchTasksByProjectId({ projectId: projectId, tasksById: tasks,isLoading,taskUpdated })
 })
 
 const projectUpdated = ref(false)
 watch(projectUpdated,()=>{
   showEditProject.value=false
-  fetchProjectById({ project: project, id: projectId })
-  projectUpdated.value=false
+  fetchProjectById({ project: project, id: projectId, projectUpdated })
 })
 
 </script>
@@ -113,8 +112,8 @@ watch(projectUpdated,()=>{
       <div class="headerLeft">
         <div class="titleContainer">
         <p class="title">{{ project?.projectName }}</p>
+        <button @click="handleEditProject"><font-awesome-icon icon="fa-solid fa-pen-to-square" style="color: darkcyan;"/></button>
         <button @click="deleteProject"><font-awesome-icon icon="fa-solid fa-trash" style="color: brown;"/></button>
-        <button @click="handleEditProject">Edit</button>
       </div>
           <em class="subTitle">{{ project?.startDate }} - {{ project?.endDate }}</em>
       </div>
@@ -127,22 +126,26 @@ watch(projectUpdated,()=>{
       @clickedDateTime="(data)=>clickedDandT=data" 
       @showForm="(form)=>showForm=form"
       @task-deleted="(deleted)=>taskUpdated=deleted"
+      @edit-task="(task)=>taskToEdit=task"
+      @edit-form-open="(open)=>showForm=open"
       :projectFromParent="project" 
       :tasksFromParent="tasks" 
       :parentWidth="parentWidth" 
-      :screenWidth="screenWidth"/>
+      :screenWidth="screenWidth"
+      />
     </div>
     <!-- add task form -->
     <div class="formContainer" v-if="showForm">
-      <div class="formItem" ref="formRef">
+      <div class="formItem" ref="taskFormRef">
         <p class="title">{{ project?.projectName }}</p>
-        <AddTasksForm :clicked="clickedToForm" :minDate="minDate" :maxDate="maxDate" @data-update="(updated)=>taskUpdated = updated"/>
+        <AddTasksForm :clicked="clickedToForm" :minDate="minDate" :maxDate="maxDate" :task="taskToEdit"
+        @data-update="(updated)=>taskUpdated = updated"/>
       </div>
     </div>
     <!-- project edit form -->
     <div class="formContainer" v-if="showEditProject">
       <div class="formItem" ref="projectFormRef">
-        <CreateProjectForm :project="dataToProjectForm" :tasks="tasks" @project-updated="(updated)=>projectUpdated = updated"/>
+        <CreateProjectForm :project="project" :tasks="tasks" @project-updated="(updated)=>projectUpdated = updated"/>
       </div>
     </div>
   </div>

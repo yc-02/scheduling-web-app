@@ -19,7 +19,7 @@ async function fetchAllProjects({projects,isLoading}:{projects:Ref<DocumentData[
 }
 
 //get single project document by id
-async function fetchProjectById({project,id}:{project:Ref<Project|DocumentData|undefined>,id:string}){
+async function fetchProjectById({project,id,projectUpdated}:{project:Ref<Project|DocumentData|undefined>,id:string,projectUpdated?:Ref<boolean>}){
     try{
         const projectDocRef = doc(db,'projects',id)
         const docSnap = await getDoc(projectDocRef)
@@ -28,6 +28,8 @@ async function fetchProjectById({project,id}:{project:Ref<Project|DocumentData|u
     }
     }catch(error){
         console.log(error)
+    }finally{
+        if(projectUpdated) projectUpdated.value=false
     }
 
 }
@@ -45,7 +47,7 @@ async function fetchTasks({tasks}:{tasks:Ref<DocumentData[]>}){
     
 }
 //fetch tasks collection by project id
-async function fetchTasksByProjectId({projectId,tasksById,isLoading}:{projectId:string,tasksById:Ref<DocumentData[]>,isLoading:Ref<boolean>}) {
+async function fetchTasksByProjectId({projectId,tasksById,isLoading,taskUpdated}:{projectId:string,tasksById:Ref<DocumentData[]>,isLoading:Ref<boolean>,taskUpdated?:Ref<boolean>}) {
     const projectTasksRef = collection(db,'projects',projectId,'tasks')
     try{
         const querySnapshot = await getDocs(projectTasksRef);
@@ -57,6 +59,7 @@ async function fetchTasksByProjectId({projectId,tasksById,isLoading}:{projectId:
         console.log(error)
     }finally{
         isLoading.value=false
+        if(taskUpdated) taskUpdated.value=false
     }
     
 }

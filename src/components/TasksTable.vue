@@ -164,10 +164,10 @@ const tasksStyle = () => {
 
 
 
-const showModal = ref()
+const showModal:Ref<boolean[]> = ref([])
 
 const toggleModal = (index: number) => {
-  showModal.value[index] = true
+  showModal.value[index] = !showModal.value[index]
   for (const key in showModal.value) {
     if (parseInt(key) !== index) {
       showModal.value[key] = false
@@ -182,6 +182,8 @@ const closeModal = () => {
   }
 }
 onClickOutside(modalTarget, closeModal)
+
+
 
 //get timeline indicator
 const now = useNow()
@@ -204,7 +206,7 @@ watch(props, () => {
   tableStyle()
   tasksStyle()
   sortTasksByTime(tasks.value??[])
-  showModal.value = tasks.value?.map(() => false)
+  showModal.value = tasks.value ? tasks.value?.map(() => false):[]
   projectsColors()
 })
 
@@ -213,8 +215,10 @@ watch(props, () => {
 
 
 
+
+
 //emit date and time to parents
-const emit=defineEmits(['clickedDateTime','showForm','task-deleted'])
+const emit=defineEmits(['clickedDateTime','showForm','task-deleted','edit-task','edit-form-open'])
 
 // const showForm = ref(false)
 const handleClickDateTime = (date: string, time: string) => {
@@ -243,6 +247,12 @@ watch(tableDataWidth,()=>{
 const handleDeleteTask = (path:string)=>{
   handleDeleteDoc({ path:path })
   emit('task-deleted',true)
+}
+
+const handleEditTask = (task:DocumentData)=>{
+  emit('edit-task',task)
+  emit('edit-form-open',true)
+  closeModal()
 }
 </script>
 
@@ -281,11 +291,11 @@ const handleDeleteTask = (path:string)=>{
           <div
             class="tasksModal"
             ref="modalTarget"
-            v-if="showModal && showModal[i]"
+            v-if="showModal[i]"
             :class="{modalOpenUp:task.startTime.split(':')[0]>=20}"
           >
             <div class="buttonContainer">
-              <button class="editButton"><font-awesome-icon icon="fa-solid fa-pen-to-square" /></button>
+              <button class="editButton" @click="handleEditTask(task)" @click.stop="closeModal"><font-awesome-icon icon="fa-solid fa-pen-to-square" /></button>
               <button @click="handleDeleteTask(task.path)" class="deleteButton"><font-awesome-icon icon="fa-solid fa-trash"/></button>
             </div>
             <p>{{ task.taskDate }}</p>

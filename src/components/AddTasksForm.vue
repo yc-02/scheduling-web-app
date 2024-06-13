@@ -1,31 +1,28 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { addDoc,collection } from 'firebase/firestore';
-import { useRouter } from 'vue-router';
-import { compareTime, formatSubmitDate } from '@/utils/dateUtils';
+import { addDoc,collection, doc, setDoc } from 'firebase/firestore';
+import { compareTime, formatSubmitDate, inputDefaultDate } from '@/utils/dateUtils';
 import { db } from '@/firebase';
+import type { Task } from 'env';
 
 
 const props = defineProps<{
     minDate?:string;
     maxDate?:string;
     clicked:{date:string,time:string,projectId:string,projectName?:string};
+    task?:Task
 }>()
 
-const title = ref('')
-const taskDate = ref(props.clicked.date)
-const startTime = ref(props.clicked.time)
-const endTime = ref()
-const taskDetails=ref('')
+const title = ref(props.task?props.task.taskName:'')
+const taskDate = ref(props.task?inputDefaultDate(props.task.taskDate):props.clicked.date)
+const startTime = ref(props.task?props.task.startTime:props.clicked.time)
+const endTime = ref(props.task?props.task.endTime:props.clicked.time)
+const taskDetails=ref(props.task?props.task.details:'')
 const taskRefId=ref(props.clicked.projectId)
-const isAllDay=ref(false)
+const isAllDay=ref(props.task?props.task.startTime==='00:00'&&props.task.endTime=='00:00':false)
 
-watch(props,()=>{
-    taskDate.value=props.clicked.date
-    startTime.value=props.clicked.time
-    taskRefId.value=props.clicked.projectId
-    
-})
+
+
 
 watch(isAllDay,()=>{
     if(isAllDay.value){
@@ -50,12 +47,17 @@ const handleSubmit=async()=>{
         details:taskDetails.value,
         checked:false,
     }
-    if(taskRefId.value){
-    await addDoc(collection(db,'projects',taskRefId.value,'tasks'),newTask).then(()=>{
+    if(props.task){
+        await setDoc(doc(db,props.task.path),newTask).then(()=>{
         emit('data-update',true)
-    })
+        })
     }else{
-        alert('something wrong!')
+        if(taskRefId.value){
+        await addDoc(collection(db,'projects',taskRefId.value,'tasks'),newTask).then(()=>{
+        emit('data-update',true)
+        })
+        }
+
     }
     }else{
         errorMessage.value='End time cannot be earlier than start time.'
@@ -95,7 +97,7 @@ const handleSubmit=async()=>{
             Details
             <input type="text" v-model="taskDetails"/>
         </label>
-        <button class="btn-primary btn-form">Add</button>
+        <button class="btn-primary btn-form">{{task?'Update':'Add'}}</button>
     </form>
 </template> 
 <style scoped>
